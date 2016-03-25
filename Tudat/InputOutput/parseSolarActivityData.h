@@ -29,6 +29,7 @@
  *    References
  *      Data file:
  *                        http://celestrak.com/SpaceData/sw19571001.txt
+ *                        http://celestrak.com/SpaceData/sw20110101.txt
  *      Data format explanation:
  *                        http://celestrak.com/SpaceData/SpaceWx-format.asp
  *
@@ -112,7 +113,7 @@ namespace solar_activity
             "Solar: Centered_81_Day_Solar_Radio_Flux_10.7_Observed" );
     static const FieldType last81DaySolarRadioFlux107Observed = hash_constructor(
             "Solar: Last_81_Day_Solar_Radio_Flux_10.7_Observed" );
-    static const FieldType datatype = hash_constructor( "Data: type");
+    static const FieldType dataType = hash_constructor( "Data: type");
 
 }   // solar_activity
 
@@ -126,7 +127,7 @@ namespace time
 }   // field_types
 }   // input_output
 
-namespace radiation
+namespace input_output
 {
 namespace solar_activity
 {
@@ -161,7 +162,7 @@ private:
 };
 
 } // namespace solar_activity
-} // namespace radiation
+} // namespace input_output
 } // namerspace tudat
 
 #endif // TUDAT_PARSESOLARACTIVITY_H

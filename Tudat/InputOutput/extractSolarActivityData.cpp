@@ -27,11 +27,16 @@
  *      120607    A. Ronse          Creation of code.
  *
  *    References
+ *      Data file:
+ *                        http://celestrak.com/SpaceData/sw19571001.txt
+ *                        http://celestrak.com/SpaceData/sw20110101.txt
+ *      Data format explanation:
+ *                        http://celestrak.com/SpaceData/SpaceWx-format.asp
  *
  */
 
-#include "Tudat/Astrodynamics/Radiation/extractSolarActivityData.h"
-#include "Tudat/Astrodynamics/Radiation/parseSolarActivityData.h"  // For the FieldTypes
+#include "Tudat/InputOutput/extractSolarActivityData.h"
+#include "Tudat/InputOutput/parseSolarActivityData.h"  // For the FieldTypes
 
 
 using namespace tudat::input_output::parsed_data_vector_utilities;
@@ -40,7 +45,7 @@ using namespace tudat::input_output::field_types::time;
 
 namespace tudat
 {
-namespace radiation
+namespace input_output
 {
 namespace solar_activity
 {
@@ -89,7 +94,7 @@ boost::shared_ptr<SolarActivityData> ExtractSolarActivityData::extract(
              data, centered81DaySolarRadioFlux107Observed);
      solarActivityContainer->last81DaySolarRadioFlux107Observed = getField<double>(
              data, last81DaySolarRadioFlux107Observed);
-     solarActivityContainer->dataType = getField<unsigned int>(data, datatype);
+     solarActivityContainer->dataType = getField<unsigned int>(data, dataType);
 
 
      // Make sure only non-empty fields are extracted
@@ -121,27 +126,27 @@ boost::shared_ptr<SolarActivityData> ExtractSolarActivityData::extract(
          getField<unsigned int>( data, planetaryEquivalentAmplitude21to24 );
      }
 
-  //   if ( !data->find( planetaryDailyCharacterFigure )->second->getRaw( )->empty( ) )
-  //   {
-  //       solarActivityContainer->planetaryDailyCharacterFigure = getField<double>(
-  //               data, planetaryDailyCharacterFigure);
-  //       solarActivityContainer->planetaryDailyCharacterFigureConverted = getField<unsigned int>(
-  //               data, planetaryDailyCharacterFigureConverted);
-  //   }
-  //
-  //   if  ( !data->find( internationalSunspotNumber )->second->getRaw( )->empty( ) )
- //    {
- //        solarActivityContainer->internationalSunspotNumber = getField<unsigned int>(
- //                data, internationalSunspotNumber);
- //    }
+     if ( !data->find( planetaryDailyCharacterFigure )->second->getRaw( ).empty( ) )
+     {
+         solarActivityContainer->planetaryDailyCharacterFigure = getField<double>(
+                 data, planetaryDailyCharacterFigure);
+         solarActivityContainer->planetaryDailyCharacterFigureConverted = getField<unsigned int>(
+                 data, planetaryDailyCharacterFigureConverted);
+     }
 
- //    if ( !data->find( fluxQualifier )->second->getRaw( )->empty( ) )
- //   {
- //        solarActivityContainer->fluxQualifier = getField<unsigned int>(data, fluxQualifier);
- //    }
+     if  ( !data->find( internationalSunspotNumber )->second->getRaw( ).empty( ) )
+     {
+         solarActivityContainer->internationalSunspotNumber = getField<unsigned int>(
+                 data, internationalSunspotNumber);
+     }
+
+     if ( !data->find( fluxQualifier )->second->getRaw( ).empty( ) )
+     {
+         solarActivityContainer->fluxQualifier = getField<unsigned int>(data, fluxQualifier);
+     }
      return solarActivityContainer;
 }
 
 } // namespace solar_activity
-} // namespace radiation
+} // namespace input_output
 } // namespace tudat

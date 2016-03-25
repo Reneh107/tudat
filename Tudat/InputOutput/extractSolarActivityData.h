@@ -27,20 +27,25 @@
  *      120607    A. Ronse          Creation of code.
  *
  *    References
+ *      Data file:
+ *                        http://celestrak.com/SpaceData/sw19571001.txt
+ *                        http://celestrak.com/SpaceData/sw20110101.txt
+ *      Data format explanation:
+ *                        http://celestrak.com/SpaceData/SpaceWx-format.asp
  *
  */
 
 #ifndef EXTRACTSOLARACTIVITY_H
 #define EXTRACTSOLARACTIVITY_H
 
-#include "Tudat/Astrodynamics/Radiation/solarActivityData.h"
+#include "Tudat/InputOutput/solarActivityData.h"
 #include "Tudat/InputOutput/extractor.h"
 
 #include <boost/shared_ptr.hpp>
 
 namespace tudat
 {
-namespace radiation
+namespace input_output
 {
 namespace solar_activity
 {
@@ -51,7 +56,7 @@ namespace solar_activity
  * solar activity data designed and placec them in a container of class SolarActivityData
  */
 class ExtractSolarActivityData : public tudat::input_output::Extractor<
-            tudat::radiation::solar_activity::SolarActivityData >
+            tudat::input_output::solar_activity::SolarActivityData >
 {
 
 public:
@@ -60,7 +65,7 @@ public:
      * Extracts the solar activity data from a "ParsedDataLineMap" object and saves it in a
      * "SolarActivityData" contatiner.
      */
-    boost::shared_ptr<tudat::radiation::solar_activity::SolarActivityData> extract(
+    boost::shared_ptr< tudat::input_output::solar_activity::SolarActivityData > extract(
                 tudat::input_output::parsed_data_vector_utilities::ParsedDataLineMapPtr data );
 
 protected:
@@ -70,7 +75,7 @@ private:
 };
 
 }   // namespace solar_activity
-}   // namespace radiation
+}   // namespace input_output
 }   // namespace tudat
 
 #endif  // EXTRACTSOLARACTIVITY_H

@@ -34,11 +34,25 @@
  *
  */
 
-#include "Tudat/Astrodynamics/Radiation/solarActivityData.h"
+#include <istream>
+#include <string>
+#include <vector>
+
+#include <boost/shared_ptr.hpp>
+#include <boost/test/unit_test.hpp>
+
+#include "tudat/InputOutput/solarActivityData.h"
+#include "Tudat/InputOutput/solarActivityData.h"
+#include "Tudat/InputOutput/parsedDataVectorUtilities.h"
+#include "Tudat/InputOutput/parseSolarActivityData.h"
+#include "Tudat/InputOutput/extractSolarActivityData.h"
+#include "Tudat/InputOutput/basicInputOutput.h"
+
+#include <tudat/Basics/testMacros.h>
 
 namespace tudat
 {
-namespace radiation
+namespace input_output
 {
 namespace solar_activity
 {
@@ -100,6 +114,40 @@ std::ostream& operator<<( std::ostream& stream,
     return stream;
 }
 
+//! This function reads a SpaceWeather data file and returns a map with SolarActivityData
+SolarActivityDataMap readSolarActivityData(std::string filePath){
+    // Data Vector container
+    tudat::input_output::parsed_data_vector_utilities::ParsedDataVectorPtr parsedDataVectorPtr;
+
+    // datafile Parser and Extractor
+    tudat::input_output::solar_activity::ParseSolarActivityData solarActivityParser;
+    tudat::input_output::solar_activity::ExtractSolarActivityData solarActivityExtractor;
+
+
+    // Open dataFile and Parse
+    std::ifstream dataFile;
+    dataFile.open(filePath.c_str(), std::ifstream::in);
+    parsedDataVectorPtr = solarActivityParser.parse( dataFile );
+    dataFile.close();
+
+    int numberOfLines = parsedDataVectorPtr->size() ;
+    SolarActivityDataMap DataMap ;
+    double JulianDate ;
+
+    // Save each line to datamap
+    for(int i = 0 ; i < numberOfLines ; i++ ){
+        JulianDate = tudat::basic_astrodynamics::convertCalendarDateToJulianDay(
+                    solarActivityExtractor.extract( parsedDataVectorPtr->at( i ) )->year,
+                    solarActivityExtractor.extract( parsedDataVectorPtr->at( i ) )->month,
+                    solarActivityExtractor.extract( parsedDataVectorPtr->at( i ) )->day,
+                    0, 0, 0.0) ;
+        DataMap[ JulianDate ] = solarActivityExtractor.extract( parsedDataVectorPtr->at( i ) ) ;
+    }
+
+    return DataMap;
+
+}
+
 } // solar_activity
-} // radiation
+} // input_output
 } // tudat

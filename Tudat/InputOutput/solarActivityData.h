@@ -29,6 +29,7 @@
  *    References
  *      Data file:
  *                        http://celestrak.com/SpaceData/sw19571001.txt
+ *                        http://celestrak.com/SpaceData/sw20110101.txt
  *      Data format explanation:
  *                        http://celestrak.com/SpaceData/SpaceWx-format.asp
  *
@@ -40,11 +41,17 @@
 #include <cstdlib>
 #include <string>
 
+#include <map>
+
 #include <Eigen/Core>
+
+#include <boost/shared_ptr.hpp>
+
+#include <tudat/Astrodynamics/BasicAstrodynamics/timeConversions.h>
 
 namespace tudat
 {
-namespace radiation
+namespace input_output
 {
 namespace solar_activity
 {
@@ -175,8 +182,23 @@ protected:
 private:
 };
 
+//! Pointer to a SolarActivityData structure
+typedef boost::shared_ptr< SolarActivityData> SolarActivityDataPtr;
+
+//! Data map of SolarActivityData structure Pointers
+typedef std::map< double , SolarActivityDataPtr >  SolarActivityDataMap ;
+
+//! Function that reads a SpaceWeather data file
+/*!
+ * This function reads a SpaceWeather data file and returns a map with SolarActivityData
+ *
+ * \param filePath std::string
+ * \return solarActivityDataMap std::map< double , SolarActivityDataPtr >
+ */
+SolarActivityDataMap readSolarActivityData(std::string filePath) ;
+
 } // namespace solar_activity
-} // namespace radiation
+} // namespace input_output
 } // namespace tudat
 
 #endif //TUDAT_SOLAR_ACTIVITY_DATA_H
