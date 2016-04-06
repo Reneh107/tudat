@@ -91,5 +91,11 @@ double computeSynodicPeriod( const double orbitalPeriodBody1, const double orbit
     return 1.0 / std::fabs( 1.0 / orbitalPeriodBody1 - 1.0 / orbitalPeriodBody2 );
 }
 
+//! Compute circular velocity
+double computeCircularVelocity( const double radius, const double gravitationalParameter )
+{
+    return std::pow( gravitationalParameter / radius , 0.5);
+}
+
 } // namespace basic_astrodynamics
 } // namespace tudat

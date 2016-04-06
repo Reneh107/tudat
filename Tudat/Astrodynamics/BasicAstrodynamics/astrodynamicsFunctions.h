@@ -115,6 +115,15 @@ double computeKeplerEnergy( const double semiMajorAxis,
  */
 double computeSynodicPeriod( const double orbitalPeriodBody1, const double orbitalPeriodBody2 );
 
+//! Compute circular velocity
+/*!
+ * Computes circular velocity of a satellite in orbit around a body.
+ * \param radius orbital radius of satellite
+ * \param gravitationalParameter gravitational parameter of body.
+ * \return circular velocity.
+ */
+double computeCircularVelocity( const double radius, const double gravitationalParameter );
+
 } // namespace basic_astrodynamics
 } // namespace tudat
 
