@@ -73,6 +73,10 @@ struct NRLMSISE00Input {
     double apDaily;
     std::vector< double > apVector;
     std::vector< int >    switches;
+
+    //! Overloaded ostream to print class information.
+    friend std::ostream& operator<<( std::ostream& stream,
+                                     NRLMSISE00Input& nrlmsiseInput );
 };
 
 //! NRLMSISE-00 atmosphere model class.
@@ -236,7 +240,7 @@ class NRLMSISE00Atmosphere : public AtmosphereModel {
      *      d[2] - N2 NUMBER DENSITY(CM-3)
      *      d[3] - O2 NUMBER DENSITY(CM-3)
      *      d[4] - AR NUMBER DENSITY(CM-3)                       
-     *      d[5] - TOTAL MASS DENSITY(GM/CM3) [includes d[8] in td7d]
+     *      d[5] - TOTAL MASS DENSITY(GM/CM3) [includes d[8] in td7d] // converted to kg/m3 in computeProperties()
      *      d[6] - H NUMBER DENSITY(CM-3)
      *      d[7] - N NUMBER DENSITY(CM-3)
      *      d[8] - Anomalous oxygen NUMBER DENSITY(CM-3)

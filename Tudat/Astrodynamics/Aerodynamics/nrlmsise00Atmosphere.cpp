@@ -72,9 +72,35 @@ void NRLMSISE00Atmosphere::computeProperties(double altitude, double longitude,
 
     gtd7(&input_, &flags_, &output_);
 
-    density_ = output_.d[5]*1000.0;
+    density_ = output_.d[5]*1000.0; // GM/CM3 to kg/M3
     temperature_ = output_.t[1];
     pressure_ = TUDAT_NAN;
+}
+
+//! Overloaded ostream to print class information.
+std::ostream& operator<<( std::ostream& stream,
+                                 NRLMSISE00Input& nrlmsiseInput ){
+    stream << "This is a NRLMSISE Input data object." << std::endl;
+    stream << "The input data is stored as: " << std::endl;
+
+    stream << "Year              = " << nrlmsiseInput.year << std::endl;
+    stream << "Day of the year   = " << nrlmsiseInput.dayOfTheYear << std::endl;
+    stream << "Second of the day = " << nrlmsiseInput.secondOfTheDay << std::endl;
+    stream << "Local solar time  = " << nrlmsiseInput.localSolarTime << std::endl;
+    stream << "f107              = " << nrlmsiseInput.f107 << std::endl;
+    stream << "f107a             = " << nrlmsiseInput.f107a << std::endl;
+    stream << "apDaily           = " << nrlmsiseInput.apDaily << std::endl;
+
+    for(unsigned int i = 0 ; i < nrlmsiseInput.apVector.size() ; i++){
+        stream << "apVector[ " << i << " ]     = " << nrlmsiseInput.apVector[i] << std::endl;
+    }
+
+    for(unsigned int i = 0 ; i < nrlmsiseInput.switches.size() ; i++){
+        stream << "switches[ " << i << " ]     = " << nrlmsiseInput.switches[i] << std::endl;
+    }
+
+    // Return stream.
+    return stream;
 }
 
 std::pair< std::vector< double >, std::vector< double >>
