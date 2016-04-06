@@ -99,6 +99,13 @@ public:
     */
     virtual double getTemperature( const double altitude, const double longitude,
                                    const double latitude, const double time ) = 0;
+    //! Reset Hash key
+    /*!
+    * Used in NRLMSISE!
+    * Reset the hash key that is used to check if recalculation is required in the NRLMSISE mode.
+    * \return void
+    */
+    virtual void resetHashKey() = 0;
 
 protected:
 
