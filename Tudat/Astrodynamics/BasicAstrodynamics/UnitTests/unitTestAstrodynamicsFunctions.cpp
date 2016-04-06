@@ -191,6 +191,25 @@ BOOST_AUTO_TEST_CASE( testSynodicPeriod )
                                 std::numeric_limits< double >::epsilon( ) );
 }
 
+BOOST_AUTO_TEST_CASE( testCircularVelocity )
+{
+    // Declare orbital radius [m]
+    double radius = 6378E3 ;
+
+    // Declare and set gravitational parameter of Earth [m^3 s^-2].
+    double earthGravitationalParameter
+            = physical_constants::GRAVITATIONAL_CONSTANT * 5.9736e24;
+
+    // Exact solution circular velocity
+    double circularVelocityExact = 7.905385118159380E3 ;
+
+    // Calculate circular velocity using function
+    double circularVelocity = basic_astrodynamics::computeCircularVelocity(radius,earthGravitationalParameter) ;
+
+    // Check if circular velocities match
+    BOOST_CHECK_CLOSE_FRACTION( circularVelocityExact , circularVelocity, 1.0e-15 );
+}
+
 BOOST_AUTO_TEST_SUITE_END( )
 
 } // namespace unit_tests
