@@ -60,7 +60,7 @@ void NRLMSISE00Atmosphere::computeProperties(double altitude, double longitude,
 
     input_.g_lat  = latitude;
     input_.g_long = longitude;
-    input_.alt    = altitude;
+    input_.alt    = altitude*1E-3;
     input_.year   = inputData.year;
     input_.doy    = inputData.dayOfTheYear;
     input_.sec    = inputData.secondOfTheDay;

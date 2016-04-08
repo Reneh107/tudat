@@ -105,7 +105,7 @@ class NRLMSISE00Atmosphere : public AtmosphereModel {
     //! Get local density.
     /*!
      * Returns the local density of the atmosphere in kg per meter^3.
-     * \param altitude Altitude [km].
+     * \param altitude Altitude [m].
      * \param longitude Longitude [deg].
      * \param latitude Latitude [deg].
      * \param time time since simulation start epoch.
@@ -120,7 +120,7 @@ class NRLMSISE00Atmosphere : public AtmosphereModel {
     //! Get local pressure.
     /*!
      * Returns the local pressure of the atmosphere in Newton per meter^2.
-     * \param altitude Altitude.
+     * \param altitude Altitude in m
      * \param longitude Longitude. (optional)
      * \param latitude Latitude. (optional)
      * \param time Time. (optional)
@@ -135,7 +135,7 @@ class NRLMSISE00Atmosphere : public AtmosphereModel {
     //! Get local temperature.
     /*!
     * Returns the local temperature of the atmosphere parameter in Kelvin.
-    * \param altitude Altitude.
+    * \param altitude Altitude in m
     * \param longitude Longitude.
     * \param latitude Latitude.
     * \param time Time.
@@ -152,7 +152,7 @@ class NRLMSISE00Atmosphere : public AtmosphereModel {
      * Gets the output directly from the model. This will return a
      * pair of double vectors containing density and temperature
      * values.
-    * \param altitude Altitude.
+    * \param altitude Altitude in m
     * \param longitude Longitude.
     * \param latitude Latitude.
     * \param time Time.
