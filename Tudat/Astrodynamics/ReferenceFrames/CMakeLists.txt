@@ -37,12 +37,14 @@
 set(REFERENCEFRAMES_SOURCES
   "${SRCROOT}${REFERENCEFRAMESDIR}/referenceFrameTransformations.cpp"
   "${SRCROOT}${REFERENCEFRAMESDIR}/apparentAccelerationModel.cpp"
+  "${SRCROOT}${REFERENCEFRAMESDIR}/referenceAngles.cpp"
 )
 
 # Add header files.
 set(REFERENCEFRAMES_HEADERS 
   "${SRCROOT}${REFERENCEFRAMESDIR}/referenceFrameTransformations.h"
   "${SRCROOT}${REFERENCEFRAMESDIR}/apparentAccelerationModel.h"
+  "${SRCROOT}${REFERENCEFRAMESDIR}/referenceAngles.h"
 )
 
 # Add static libraries.
@@ -57,3 +59,7 @@ target_link_libraries(test_ReferenceFrameTransformations tudat_reference_frames 
 add_executable(test_ApparentAccelerationModel "${SRCROOT}${REFERENCEFRAMESDIR}/UnitTests/unitTestApparentAccelerationModel.cpp")
 setup_custom_test_program(test_ApparentAccelerationModel "${SRCROOT}${REFERENCEFRAMESDIR}")
 target_link_libraries(test_ApparentAccelerationModel tudat_reference_frames ${Boost_LIBRARIES})
+
+add_executable(test_ReferenceAngles "${SRCROOT}${REFERENCEFRAMESDIR}/UnitTests/unitTestReferenceAngles.cpp")
+setup_custom_test_program(test_ReferenceAngles "${SRCROOT}${REFERENCEFRAMESDIR}")
+target_link_libraries(test_ReferenceAngles tudat_reference_frames ${Boost_LIBRARIES})
