@@ -23,6 +23,7 @@
 
 #include <tudat/Mathematics/BasicMathematics/basicMathematicsFunctions.h>
 #include <tudat/Mathematics/BasicMathematics/mathematicalConstants.h>
+#include <tudat/Astrodynamics/BasicAstrodynamics/timeConversions.h>
 
 namespace tudat
 {
@@ -31,23 +32,35 @@ namespace reference_frames
 {
 
 //! Compute the angle between the inertial and rotating geocentric reference frame.
-double computeVernalOffset( double julianDay )
+double computeVernalOffset( double julianDate )
 {
-    double greenwhichSiderealTime;
-    double Tu;
-    double fractpart, intpart; // fractpart: part of day , intpart: day
+    using tudat::basic_astrodynamics::JULIAN_DAY_ON_J2000;
+    using tudat::basic_mathematics::computeModulo ;
 
-    fractpart = std::modf( julianDay + 0.5, &intpart );
-    julianDay = julianDay - fractpart;
-    Tu = (julianDay - 2451545.0)/36525.0;
+    double julianDatePreviousMidnight = std::floor(julianDate-0.5)+0.5 ;
+    double julianDateSinceJ2000 = julianDatePreviousMidnight - JULIAN_DAY_ON_J2000 ;
+    double centuriesSince2000 = julianDateSinceJ2000/36525.0;
 
-    greenwhichSiderealTime = 24110.54841 + Tu*(8640184.812866
-                                       + Tu * (0.093104 - Tu * 6.2E-6));
+    // Code: A. Ronse
+//    double greenwhichMeanSiderealTime = 24110.54841 +
+//            8640184.812866 * centuriesSince2000 +
+//            1.00273790935 * (julianDate - julianDatePreviousMidnight) * 86400.0 +
+//            0.093104 * centuriesSince2000 * centuriesSince2000 +
+//            - centuriesSince2000 * centuriesSince2000 * centuriesSince2000 * 6.2E-6 ; // effect -1.50568e-008
 
-    greenwhichSiderealTime = tudat::basic_mathematics::computeModulo(
-            greenwhichSiderealTime + 86400.0*1.00273790934*fractpart, 86400.0);
+    // Code: report A. Ronse
+//    double greenwhichMeanSiderealTime = 24110.54841 +
+//            236.55536 * julianDateSinceJ2000 +
+//            1.00273790935 * (julianDate - julianDatePreviousMidnight) * 86400.0 +
+//            0.093104 * centuriesSince2000 * centuriesSince2000;
 
-    return 2.0*tudat::mathematics::PI * greenwhichSiderealTime / 86400.0;
+    // Code http://aa.usno.navy.mil/faq/docs/GAST.php
+    double greenwhichMeanSiderealTime = (6.697374558 +
+            0.06570982441908 * julianDateSinceJ2000 +
+            1.00273790935 * (julianDate - julianDatePreviousMidnight) * 24.0 +
+            0.000026 * centuriesSince2000 * centuriesSince2000) * 3600;
+
+    return 2.0 * tudat::mathematical_constants::PI * computeModulo<double>(greenwhichMeanSiderealTime , 86400.0) / 86400.0;
 }
 
 } // namespace reference_frames

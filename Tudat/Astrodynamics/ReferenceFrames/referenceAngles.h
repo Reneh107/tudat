@@ -40,8 +40,10 @@ namespace reference_frames
  *      USNO (2011), Explanatory Supplement to the Astronomical Almanac, The U.S. Naval
  *          Observatory, p. 50.
  *
+ * \param julianDate julian date at time of interest
+ *
  */
-double computeVernalOffset( double julianDay );
+double computeVernalOffset( double julianDate );
 
 
 
