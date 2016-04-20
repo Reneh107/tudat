@@ -100,15 +100,48 @@ class NRLMSISE00Atmosphere : public AtmosphereModel {
     NRLMSISE00Atmosphere(const NRLMSISE00InputFunction nrlmsise00InputFunction)
         : nrlmsise00InputFunction_(nrlmsise00InputFunction) {
         resetHashKey();
+        molarGasConstant_ = tudat::physical_constants::MOLAR_GAS_CONSTANT;
+        specificHeatRatio_ = 1.4 ;
+        GasComponentProperties gasProperties;
+        gasComponentProperties_ = gasProperties; // Default gas properties
+    }
+
+    //! Constructor
+    /*!
+     * Constructor that sets the gas component properties and specific heat ratio.
+     * \param nrlmsise00InputFunction shared function pointer to provide all necessary input.
+     * \param specificHeatRatio value of the specific heat ratio.
+     * \param gasProperties a GasComponentProperties data structure that contains
+     *  the molecule collision diameters and the molar mass.
+     */
+    NRLMSISE00Atmosphere(const NRLMSISE00InputFunction nrlmsise00InputFunction,
+                         double specificHeatRatio,
+                         GasComponentProperties gasProperties)
+        : nrlmsise00InputFunction_(nrlmsise00InputFunction) {
+        resetHashKey();
+        molarGasConstant_ = tudat::physical_constants::MOLAR_GAS_CONSTANT;
+        specificHeatRatio_ = specificHeatRatio ;
+        gasComponentProperties_ = gasProperties; // Default gas properties
+    }
+
+    //! Set gas component properties.
+    /*!
+     * Sets the gas component properties.
+     * These are required for the calculation of the speed of sound and the mean free path.
+     * \param GasComponentProperties .
+     * \return void.
+     */
+    void setGasComponentProperties(GasComponentProperties gasComponentProperties){
+        gasComponentProperties_ = gasComponentProperties;
     }
 
     //! Get local density.
     /*!
      * Returns the local density of the atmosphere in kg per meter^3.
      * \param altitude Altitude [m].
-     * \param longitude Longitude [deg].
-     * \param latitude Latitude [deg].
-     * \param time time since simulation start epoch.
+     * \param longitude Longitude [rad].
+     * \param latitude Latitude [rad].
+     * \param time time.
      * \return Atmospheric density [kg/m^3].
      */
     double getDensity(double altitude, double longitude,
@@ -120,10 +153,11 @@ class NRLMSISE00Atmosphere : public AtmosphereModel {
     //! Get local pressure.
     /*!
      * Returns the local pressure of the atmosphere in Newton per meter^2.
-     * \param altitude Altitude in m
-     * \param longitude Longitude. (optional)
-     * \param latitude Latitude. (optional)
-     * \param time Time. (optional)
+     * The pressure is not implemented in the current version (returns NaN).
+     * \param altitude Altitude [m].
+     * \param longitude Longitude [rad].
+     * \param latitude Latitude [rad].
+     * \param time time.
      * \return Atmospheric pressure.
      */
     double getPressure(double altitude, double longitude,
@@ -135,10 +169,10 @@ class NRLMSISE00Atmosphere : public AtmosphereModel {
     //! Get local temperature.
     /*!
     * Returns the local temperature of the atmosphere parameter in Kelvin.
-    * \param altitude Altitude in m
-    * \param longitude Longitude.
-    * \param latitude Latitude.
-    * \param time Time.
+     * \param altitude Altitude [m].
+     * \param longitude Longitude [rad].
+     * \param latitude Latitude [rad].
+     * \param time time.
     * \return Atmospheric temperature.
     */
     double getTemperature(const double altitude, const double longitude,
@@ -147,15 +181,105 @@ class NRLMSISE00Atmosphere : public AtmosphereModel {
         return temperature_;
     }
 
+    //! Get local speed of sound.
+    /*!
+    * Returns the local speed of sound in m/s.
+     * \param altitude Altitude [m].
+     * \param longitude Longitude [rad].
+     * \param latitude Latitude [rad].
+     * \param time time.
+    * \return speed of sound.
+    */
+    double getSpeedOfSound(const double altitude, const double longitude,
+                          const double latitude, const double time) {
+        computeProperties(altitude, longitude, latitude, time);
+        return speedOfSound_;
+    }
+
+    //! Get local mean free path.
+    /*!
+    * Returns the local mean free path in m.
+     * \param altitude Altitude [m].
+     * \param longitude Longitude [rad].
+     * \param latitude Latitude [rad].
+     * \param time time.
+    * \return mean free path.
+    */
+    double getMeanFreePath(const double altitude, const double longitude,
+                          const double latitude, const double time) {
+        computeProperties(altitude, longitude, latitude, time);
+        return meanFreePath_;
+    }
+
+    //! Get local mean molar mass.
+    /*!
+    * Returns the local mean molar mass in kg/mol.
+     * \param altitude Altitude [m].
+     * \param longitude Longitude [rad].
+     * \param latitude Latitude [rad].
+     * \param time time.
+    * \return mean molar mass.
+    */
+    double getMeanMolarMass(const double altitude, const double longitude,
+                          const double latitude, const double time) {
+        computeProperties(altitude, longitude, latitude, time);
+        return meanMolarMass_;
+    }
+
+    //! get local number density of the gas components.
+    /*!
+    * Returns the number density of each gas component in a vector.
+     * \param altitude Altitude [m].
+     * \param longitude Longitude [rad].
+     * \param latitude Latitude [rad].
+     * \param time time.
+    * \return number densities of gas components
+    */
+    std::vector<double> getNumberDensities(const double altitude, const double longitude,
+                                           const double latitude, const double time) {
+        computeProperties(altitude, longitude, latitude, time);
+        return numberDensities_;
+    }
+
+    //! Get local average number density.
+    /*!
+    * Returns the local average number density in m^-3
+     * \param altitude Altitude [m].
+     * \param longitude Longitude [rad].
+     * \param latitude Latitude [rad].
+     * \param time time.
+    * \return average number density.
+    */
+    double getAverageNumberDensity(const double altitude, const double longitude,
+                          const double latitude, const double time) {
+        computeProperties(altitude, longitude, latitude, time);
+        return averageNumberDensity_;
+    }
+
+    //! Get local weighted average collision diameter.
+    /*!
+    * Returns the local weighted average collision diameter using the number densities as weights.
+     * \param altitude Altitude [m].
+     * \param longitude Longitude [rad].
+     * \param latitude Latitude [rad].
+     * \param time time.
+    * \return weighted average collision diameter.
+    */
+    double getWeightedAverageCollisionDiameter(const double altitude, const double longitude,
+                          const double latitude, const double time) {
+        computeProperties(altitude, longitude, latitude, time);
+        return weightedAverageCollisionDiameter_;
+    }
+
     //! Get the full model output
     /*!
      * Gets the output directly from the model. This will return a
      * pair of double vectors containing density and temperature
      * values.
-    * \param altitude Altitude in m
-    * \param longitude Longitude.
-    * \param latitude Latitude.
-    * \param time Time.
+     * \param altitude Altitude [m].
+     * \param longitude Longitude [rad].
+     * \param latitude Latitude [rad].
+     * \param time time.
     * \return Full density and temperature values
      */
     std::pair< std::vector< double >, std::vector< double >> getFullOutput(
@@ -184,19 +308,60 @@ class NRLMSISE00Atmosphere : public AtmosphereModel {
     size_t hashKey_;
 
     /*!
-     *  Current local density
+     *  Current local density (kg/m3)
      */
     double density_;
 
     /*!
-     *  Current local temperature
+     *  Current local temperature (K)
      */
     double temperature_;
 
     /*!
-     *  Current local pressure
+     *  Current local pressure (Not implemented!)
      */
     double pressure_;
+
+    /*!
+     *  Current speed of sound (m/s)
+     */
+    double speedOfSound_;
+
+    /*!
+     *  Current mean free path (m)
+     */
+    double meanFreePath_;
+
+    /*!
+     *  Current number densities of gas components
+     *      numberDensities_[0] - HE NUMBER DENSITY     (M-3)
+     *      numberDensities_[1] - O NUMBER DENSITY      (M-3)
+     *      numberDensities_[2] - N2 NUMBER DENSITY     (M-3)
+     *      numberDensities_[3] - O2 NUMBER DENSITY     (M-3)
+     *      numberDensities_[4] - AR NUMBER DENSITY     (M-3)
+     *      numberDensities_[5] - H NUMBER DENSITY      (M-3)
+     *      numberDensities_[6] - N NUMBER DENSITY      (M-3)
+     *      numberDensities_[7] - Anomalous oxygen NUMBER DENSITY   (M-3)
+     */
+    std::vector<double> numberDensities_;
+
+    //! Current average number density (M-3)
+    double averageNumberDensity_;
+
+    //! Current weighted average of the collision diameter using the number density as weights in (M)
+    double weightedAverageCollisionDiameter_;
+
+    //! mean molar mass (kg/mole)
+    double meanMolarMass_;
+
+    //! Data structure that contains the colision diameter
+    GasComponentProperties gasComponentProperties_;
+
+    //! Specific heat ratio
+    double specificHeatRatio_;
+
+    //! Molar gas constant (J/mol K)
+    double molarGasConstant_;
 
     /*!
      *  The file name of the solar activity data.
@@ -223,8 +388,8 @@ class NRLMSISE00Atmosphere : public AtmosphereModel {
      *      doy    - day of the year                   (int)
      *      sec    - seconds in the day (UT)           (double)
      *      alt    - altitude in kilometers            (double)
-     *      g_lat  - geodetic latitude                 (double)
-     *      g_long - geodetic longitude                (double)
+     *      g_lat  - geodetic latitude in deg          (double)
+     *      g_long - geodetic longitude in deg         (double)
      *      lst    - local apparent solar time (hours) (double)
      *      f107A  - 81 day average of F10.7 flux (centered on doy) (double)
      *      f107   - daily F10.7 flux for previous day (double)
@@ -271,10 +436,10 @@ class NRLMSISE00Atmosphere : public AtmosphereModel {
     //! Get Hash Key
     /*!
      * Returns hash key value based on a vector of keys
-     * \param altitude Altitude.
-     * \param longitude Longitude.
-     * \param latitude Latitude.
-     * \param time Time.
+     * \param altitude Altitude [m].
+     * \param longitude Longitude [rad].
+     * \param latitude Latitude [rad].
+     * \param time time.
      * \return hash key value.
      */
     size_t hashFunc(double altitude, double longitude,
@@ -290,10 +455,10 @@ class NRLMSISE00Atmosphere : public AtmosphereModel {
     //! Compute the local atmospheric properties
     /*!
      * Computes the local atmospheric density, pressure and temperature.
-     * \param altitude Altitude.
-     * \param longitude Longitude.
-     * \param latitude Latitude.
-     * \param time Time.
+     * \param altitude Altitude [m].
+     * \param longitude Longitude [rad].
+     * \param latitude Latitude [rad].
+     * \param time time.
      */
     void computeProperties(double altitude, double longitude,
                            double latitude, double time);
