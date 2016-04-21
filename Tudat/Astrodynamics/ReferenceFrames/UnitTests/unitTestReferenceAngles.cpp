@@ -43,31 +43,18 @@
 #include <boost/test/unit_test.hpp>
 
 #include <Eigen/Core>
+#include <Eigen/Geometry>
 
 #include "Tudat/Basics/testMacros.h"
 
 #include "tudat/Astrodynamics/ReferenceFrames/referenceAngles.h"
+#include "tudat/Astrodynamics/ReferenceFrames/referenceFrameTransformations.h"
 #include "tudat/Astrodynamics/BasicAstrodynamics/timeConversions.h"
+
 #include <tudat/Mathematics/BasicMathematics/basicMathematicsFunctions.h>
 #include <tudat/Mathematics/BasicMathematics/mathematicalConstants.h>
 
-namespace tudat
-{
-namespace unit_tests
-{
-
-
-BOOST_AUTO_TEST_SUITE( test_vernal_offset )
-
-BOOST_AUTO_TEST_CASE( test_compute_vernal_offset_compare_Ronse)
-{
-    // Do something
-    // Vernal offset 2pi after 1 day
-    double julianDate = tudat::basic_astrodynamics::convertCalendarDateToJulianDay(2013,06,11,6,25,15);
-    double vernalOffset = tudat::reference_frames::computeVernalOffset(julianDate) ;
-
-    double julianDay = julianDate;
-    double thetaG_JulianDay;
+double vernalOffsetRonse(double julianDay){
     double GreenwhichSiderealTime;
     double Tu;
     double fractpart, intpart;
@@ -82,14 +69,319 @@ BOOST_AUTO_TEST_CASE( test_compute_vernal_offset_compare_Ronse)
     GreenwhichSiderealTime = tudat::basic_mathematics::computeModulo(
             GreenwhichSiderealTime + 86400.0*1.00273790934*fractpart, 86400.0);
 
-    thetaG_JulianDay = 2.0* tudat::mathematical_constants::PI * GreenwhichSiderealTime / 86400.0;
-
-    BOOST_CHECK_SMALL( std::fabs( vernalOffset - thetaG_JulianDay ) , 1E-10 );
-
-    // Difference in impact location due to error
-    std::cout << "difference between ronse / rene = " << (vernalOffset - thetaG_JulianDay)*6378.136E3 << " meters " << std::endl;
-    // Difference between Ronse code vs program Ronse = -18.00945692896082 meters
+    return 2.0* tudat::mathematical_constants::PI * GreenwhichSiderealTime / 86400.0;
 }
+
+namespace tudat
+{
+namespace unit_tests
+{
+
+
+BOOST_AUTO_TEST_SUITE( test_vernal_offset )
+
+using tudat::mathematical_constants::PI;
+
+//! Test vernal offset computation
+BOOST_AUTO_TEST_CASE( test_compute_vernal_offset_compare_Ronse)
+{
+    // Define julian date and compute vernal offset
+    double julianDate = tudat::basic_astrodynamics::convertCalendarDateToJulianDay(2013,6,11,6,25,15);
+    double vernalOffset = tudat::reference_frames::computeVernalOffset(julianDate) ;
+
+    // Comparison with matlab function: Julian date to greenwich mean sidereal time (File exchange)
+    // http://www.mathworks.com/matlabcentral/fileexchange/28176-julian-date-to-greenwich-mean-sidereal-time
+    BOOST_CHECK_CLOSE_FRACTION( vernalOffset*180.0/PI , 356.0725571517477 , 3E-8 );
+
+    //! Second julian date
+    julianDate = tudat::basic_astrodynamics::convertCalendarDateToJulianDay(2015,3,11,15,25,15);
+    vernalOffset = tudat::reference_frames::computeVernalOffset(julianDate) ;
+
+    // Comparison with matlab function
+    BOOST_CHECK_CLOSE_FRACTION( vernalOffset*180.0/PI , 40.28519655625729 , 3E-7 );
+
+    //! Third julian date
+    julianDate = tudat::basic_astrodynamics::convertCalendarDateToJulianDay(2002,9,5,12,15,0);
+    vernalOffset = tudat::reference_frames::computeVernalOffset(julianDate) ;
+
+    // Comparison with matlab function
+    BOOST_CHECK_CLOSE_FRACTION( vernalOffset*180.0/PI , 168.1840220843993 , 1E-7 );
+}
+
+//! test aerodynamic angles computation: aerodynamic angles zero
+BOOST_AUTO_TEST_CASE( test_compute_aerodynamic_angles_1 )
+{
+    // Aerodynamic angles zero
+    double longitude        = 0.0 ;
+    double latitude         = 0.0 ;
+    double flightPathAngle  = 0.0 ;
+    double headingAngle     = 0.0 ; // Flying towards the north
+    double time             = 0.0;
+
+    // Compute vernal offset
+    double vernalOffset = tudat::reference_frames::computeVernalOffset(
+                tudat::basic_astrodynamics::convertSecondsSinceEpochToJulianDay(time) ) ;
+
+    // Inertial to rotating frame transformation matrix
+    Eigen::Matrix3d InertialToRotating =
+            tudat::reference_frames::getInertialToPlanetocentricFrameTransformationMatrix( vernalOffset );
+
+    // Define attitude of body
+    // X-axis towards north (direction of flight) , Y-axis towards east ,Z-axis towards earth
+    Eigen::Matrix3d bodyToInertial; // Rotation matrix
+    Eigen::Vector3d rotationAxis;
+    rotationAxis << 0.0 , 1.0 , 0.0 ;
+    double rotationAngle = PI/2.0 ; // 90 deg around y axis
+    bodyToInertial = Eigen::AngleAxisd(- rotationAngle , rotationAxis.normalized() ) ;
+    bodyToInertial = InertialToRotating.transpose() * bodyToInertial ;
+
+    Eigen::Vector3d aerodynamicAngles = tudat::reference_frames::computeAerodynamicAngles(
+                longitude,latitude,time,flightPathAngle,headingAngle,bodyToInertial);
+
+    BOOST_CHECK_SMALL( std::fabs( aerodynamicAngles(0) - 0.0 ) , 1E-15 );
+    BOOST_CHECK_SMALL( std::fabs( aerodynamicAngles(1) - 0.0 ) , 1E-15 );
+    BOOST_CHECK_SMALL( std::fabs( aerodynamicAngles(2) - 0.0 ) , 1E-15 );
+}
+
+//! test aerodynamic angles computation: Only angle of attack
+BOOST_AUTO_TEST_CASE( test_compute_aerodynamic_angles_2 )
+{
+    // Only angle of attack
+    double longitude        = 0.0 ;
+    double latitude         = 0.0 ;
+    double flightPathAngle  = 0.0 ;
+    double headingAngle     = 0.0 ; // Flying towards the north
+    double time             = 0.0;
+
+    // Compute vernal offset
+    double vernalOffset = tudat::reference_frames::computeVernalOffset(
+                tudat::basic_astrodynamics::convertSecondsSinceEpochToJulianDay(time) ) ;
+
+    // Inertial to rotating frame transformation matrix
+    Eigen::Matrix3d InertialToRotating =
+            tudat::reference_frames::getInertialToPlanetocentricFrameTransformationMatrix( vernalOffset );
+
+    // Define attitude of body
+    // X-axis towards north (direction of flight) , Y-axis towards east ,Z-axis towards earth
+    Eigen::Matrix3d bodyToInertial; // Rotation matrix
+    Eigen::Vector3d rotationAxis;
+    rotationAxis << 0.0 , 1.0 , 0.0 ;
+    double angleOfAttack = PI/8.0 ;
+    double rotationAngle = PI/2.0 - angleOfAttack ; // 90 deg around y axis - angle of attack
+    bodyToInertial = Eigen::AngleAxisd(- rotationAngle , rotationAxis.normalized() ) ;
+    bodyToInertial = InertialToRotating.transpose() * bodyToInertial ;
+
+    Eigen::Vector3d aerodynamicAngles = tudat::reference_frames::computeAerodynamicAngles(
+                longitude,latitude,time,flightPathAngle,headingAngle,bodyToInertial);
+
+    BOOST_CHECK_SMALL( std::fabs( aerodynamicAngles(0) - angleOfAttack ) , 1E-15 );
+    BOOST_CHECK_SMALL( std::fabs( aerodynamicAngles(1) - 0.0 ) , 1E-15 );
+    BOOST_CHECK_SMALL( std::fabs( aerodynamicAngles(2) - 0.0 ) , 1E-15 );
+}
+
+//! test aerodynamic angles computation: Only bank sideslip
+BOOST_AUTO_TEST_CASE( test_compute_aerodynamic_angles_3 )
+{
+    // Only angle of sideslip
+    double longitude        = 0.0 ;
+    double latitude         = 0.0 ;
+    double flightPathAngle  = 0.0 ;
+    double headingAngle     = 0.0 ; // Flying towards the north
+    double time             = 0.0;
+
+    // Compute vernal offset
+    double vernalOffset = tudat::reference_frames::computeVernalOffset(
+                tudat::basic_astrodynamics::convertSecondsSinceEpochToJulianDay(time) ) ;
+
+    // Inertial to rotating frame transformation matrix
+    Eigen::Matrix3d InertialToRotating =
+            tudat::reference_frames::getInertialToPlanetocentricFrameTransformationMatrix( vernalOffset );
+
+    // Define attitude of body
+    // X-axis towards north (direction of flight) , Y-axis towards east ,Z-axis towards earth
+    Eigen::Matrix3d bodyToInertial; // Rotation matrix
+    Eigen::Vector3d rotationAxis;
+    rotationAxis << 0.0 , 1.0 , 0.0 ;
+    double rotationAngle = PI/2.0 ; // 90 deg around y axis
+    bodyToInertial = Eigen::AngleAxisd(- rotationAngle , rotationAxis.normalized() ) ;
+
+    double angleOfSideslip = -PI/6.0 ;
+    rotationAxis << 0.0 , 0.0 , 1.0 ;
+    Eigen::Matrix3d frameRotation;
+    frameRotation = Eigen::AngleAxisd(- angleOfSideslip , rotationAxis.normalized() ) ;
+
+    bodyToInertial = bodyToInertial * frameRotation;
+    bodyToInertial = InertialToRotating.transpose() * bodyToInertial ;
+
+    Eigen::Vector3d aerodynamicAngles = tudat::reference_frames::computeAerodynamicAngles(
+                longitude,latitude,time,flightPathAngle,headingAngle,bodyToInertial);
+
+    BOOST_CHECK_SMALL( std::fabs( aerodynamicAngles(0) - 0.0 ) , 1E-15 );
+    BOOST_CHECK_SMALL( std::fabs( aerodynamicAngles(1) - angleOfSideslip ) , 1E-15 );
+    BOOST_CHECK_SMALL( std::fabs( aerodynamicAngles(2) - 0.0 ) , 1E-15 );
+}
+
+//! test aerodynamic angles computation: Only bank angle
+BOOST_AUTO_TEST_CASE( test_compute_aerodynamic_angles_4 )
+{
+    // Only bank angle
+    double longitude        = 0.0 ;
+    double latitude         = 0.0 ;
+    double flightPathAngle  = 0.0 ;
+    double headingAngle     = 0.0 ; // Flying towards the north
+    double time             = 0.0;
+
+    // Compute vernal offset
+    double vernalOffset = tudat::reference_frames::computeVernalOffset(
+                tudat::basic_astrodynamics::convertSecondsSinceEpochToJulianDay(time) ) ;
+
+    // Inertial to rotating frame transformation matrix
+    Eigen::Matrix3d InertialToRotating =
+            tudat::reference_frames::getInertialToPlanetocentricFrameTransformationMatrix( vernalOffset );
+
+    // Define attitude of body
+    // X-axis towards north (direction of flight) , Y-axis towards east ,Z-axis towards earth
+    Eigen::Matrix3d bodyToInertial; // Rotation matrix
+    Eigen::Vector3d rotationAxis;
+    rotationAxis << 0.0 , 1.0 , 0.0 ;
+    double rotationAngle = PI/2.0 ; // 90 deg around y axis
+    bodyToInertial = Eigen::AngleAxisd(- rotationAngle , rotationAxis.normalized() ) ;
+
+    double bankAngle = PI/6.0 ;
+    rotationAxis << 1.0 , 0.0 , 0.0 ;
+    Eigen::Matrix3d frameRotation;
+    frameRotation = Eigen::AngleAxisd(- bankAngle , rotationAxis.normalized() ) ;
+
+    bodyToInertial = bodyToInertial * frameRotation;
+    bodyToInertial = InertialToRotating.transpose() * bodyToInertial ;
+
+    Eigen::Vector3d aerodynamicAngles = tudat::reference_frames::computeAerodynamicAngles(
+                longitude,latitude,time,flightPathAngle,headingAngle,bodyToInertial);
+
+    BOOST_CHECK_SMALL( std::fabs( aerodynamicAngles(0) - 0.0 ) , 1E-15 );
+    BOOST_CHECK_SMALL( std::fabs( aerodynamicAngles(1) - 0.0 ) , 1E-15 );
+    BOOST_CHECK_SMALL( std::fabs( aerodynamicAngles(2) - bankAngle ) , 1E-15 );
+}
+
+////! test aerodynamic angles computation: Angle of attack and sideslip
+//BOOST_AUTO_TEST_CASE( test_compute_aerodynamic_angles_5 )
+//{
+//    // Only angle of attack and sideslip
+//    double longitude        = 0.0 ;
+//    double latitude         = 0.0 ;
+//    double flightPathAngle  = 0.0 ;
+//    double headingAngle     = 0.0 ; // Flying towards the north
+//    double time             = 0.0;
+
+//    // Compute vernal offset
+//    double vernalOffset = tudat::reference_frames::computeVernalOffset(
+//                tudat::basic_astrodynamics::convertSecondsSinceEpochToJulianDay(time) ) ;
+
+//    // Inertial to rotating frame transformation matrix
+//    Eigen::Matrix3d InertialToRotating =
+//            tudat::reference_frames::getInertialToPlanetocentricFrameTransformationMatrix( vernalOffset );
+
+//    // Define attitude of body
+//    // X-axis towards north (direction of flight) , Y-axis towards east ,Z-axis towards earth
+//    Eigen::Matrix3d bodyToInertial; // Rotation matrix
+//    Eigen::Vector3d rotationAxis;
+//    rotationAxis << 0.0 , 1.0 , 0.0 ;
+//    double angleOfAttack = PI/8.0 ;
+//    double rotationAngle = PI/2.0 - angleOfAttack ; // 90 deg around y axis - angle of attack
+//    bodyToInertial = Eigen::AngleAxisd(- rotationAngle , rotationAxis.normalized() ) ;
+
+//    double angleOfSideslip = -PI/6.0 ;
+//    rotationAxis << 0.0 , 0.0 , 1.0 ;
+//    Eigen::Matrix3d frameRotation;
+//    frameRotation = Eigen::AngleAxisd(- angleOfSideslip , rotationAxis.normalized() ) ;
+
+//    bodyToInertial = bodyToInertial * frameRotation;
+//    bodyToInertial = InertialToRotating.transpose() * bodyToInertial ;
+
+//    Eigen::Vector3d aerodynamicAngles = tudat::reference_frames::computeAerodynamicAngles(
+//                longitude,latitude,time,flightPathAngle,headingAngle,bodyToInertial);
+
+//    BOOST_CHECK_SMALL( std::fabs( aerodynamicAngles(0) - angleOfAttack ) , 1E-15 );
+//    BOOST_CHECK_SMALL( std::fabs( aerodynamicAngles(1) - angleOfSideslip ) , 1E-15 );
+//    BOOST_CHECK_SMALL( std::fabs( aerodynamicAngles(2) - 0.0 ) , 1E-15 );
+//}
+
+//! test aerodynamic angles computation: Body frame same orientation as rotating planetocentric frame
+BOOST_AUTO_TEST_CASE( test_compute_aerodynamic_angles_6 )
+{
+    // Body frame same orientation as rotating planetocentric frame
+    double longitude        = 0.0 ;
+    double latitude         = 0.0 ;
+    double flightPathAngle  = 0.0 ;
+    double headingAngle     = 0.0 ; // Flying towards the north
+    double time             = 0.0 ;
+
+    // Compute vernal offset
+    double vernalOffset = tudat::reference_frames::computeVernalOffset(
+                tudat::basic_astrodynamics::convertSecondsSinceEpochToJulianDay(time) ) ;
+
+    // Inertial to rotating frame transformation matrix
+    Eigen::Matrix3d InertialToRotating =
+            tudat::reference_frames::getInertialToPlanetocentricFrameTransformationMatrix( vernalOffset );
+
+    // Define attitude of body
+    // No rotation = orientation B and I frame identical
+    Eigen::Matrix3d noRotation;
+    noRotation = Eigen::Matrix3d::Identity(3,3);
+    noRotation = InertialToRotating.transpose() * noRotation ;
+
+    Eigen::Vector3d aerodynamicAngles = tudat::reference_frames::computeAerodynamicAngles(
+                    longitude,latitude,time,flightPathAngle,headingAngle,noRotation);
+
+    BOOST_CHECK_SMALL( std::fabs( aerodynamicAngles(0) - PI/2.0 ) , 1E-15 );
+    BOOST_CHECK_SMALL( std::fabs( aerodynamicAngles(1) - 0.0 ) , 1E-15 );
+    BOOST_CHECK_SMALL( std::fabs( aerodynamicAngles(2) - 0.0 ) , 1E-15 );
+}
+
+////! test aerodynamic angles computation
+//BOOST_AUTO_TEST_CASE( test_compute_aerodynamic_angles_7 )
+//{
+//    // Body frame same orientation as rotating planetocentric frame
+//    double longitude        = 0.0 ;
+//    double latitude         = 0.0 ;
+//    double flightPathAngle  = 0.0 ;
+//    double headingAngle     = 0.0 ; // Flying towards the north
+//    double time             = 0.0;
+
+//    // Compute vernal offset
+//    double vernalOffset = tudat::reference_frames::computeVernalOffset(
+//                tudat::basic_astrodynamics::convertSecondsSinceEpochToJulianDay(time) ) ;
+
+//    // Inertial to rotating frame transformation matrix
+//    Eigen::Matrix3d InertialToRotating =
+//            tudat::reference_frames::getInertialToPlanetocentricFrameTransformationMatrix( vernalOffset );
+
+//    // Define attitude of body
+//    double rotationAngle = 0.0 ;
+//    rotationAxis(0) = 0.0 ;
+//    rotationAxis(1) = 0.0 ;
+//    rotationAxis(2) = 1.0 ;
+//    //    rotationAxis = rotationAxis / ( std::sin(rotationAngle/2.0) ) ;
+//    Eigen::Quaterniond BodyFrameToInertialFrameTransformationMatrix;
+//    BodyFrameToInertialFrameTransformationMatrix = Eigen::AngleAxisd(- rotationAngle , rotationAxis.normalized() ) ;
+
+//    Eigen::Matrix<double,4,1> quaternion;
+//    quaternion << 0.0 , 0.0 , 0.0 , 1.0 ;
+//    Eigen::Matrix3d BodyFrameToInertialFrameTransformationMatrix;
+//    BodyFrameToInertialFrameTransformationMatrix = tudat::reference_frames::convertQuaternionToRotationMatrix(quaternion);
+//    Eigen::Matrix3d C_RI =
+//    tudat::reference_frames::getInertialToPlanetocentricFrameTransformationMatrix(
+//                tudat::reference_frames::computeVernalOffset(
+//                    tudat::basic_astrodynamics::JULIAN_DAY_ON_J2000));
+//    //    Eigen::Matrix3d C_VR =
+
+//    Eigen::Vector3d aerodynamicAngles = tudat::reference_frames::computeAerodynamicAngles(
+//                    longitude,latitude,time,flightPathAngle,headingAngle,BodyFrameToInertialFrameTransformationMatrix);
+
+//    BOOST_CHECK_SMALL( std::fabs( aerodynamicAngles(0) - 0.0 ) , 1E-15 );
+//    BOOST_CHECK_SMALL( std::fabs( aerodynamicAngles(1) - 0.0 ) , 1E-15 );
+//    BOOST_CHECK_SMALL( std::fabs( aerodynamicAngles(2) - 0.0 ) , 1E-15 );
+//}
 
 BOOST_AUTO_TEST_SUITE_END( )
 

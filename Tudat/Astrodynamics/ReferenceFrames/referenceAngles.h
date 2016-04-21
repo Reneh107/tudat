@@ -18,8 +18,8 @@
  *
  */
 
-#ifndef TUDAT_COMPUTE_VERNAL_OFFSET_H
-#define TUDAT_COMPUTE_VERNAL_OFFSET_H
+#ifndef TUDAT_REFERENCE_ANGLES_H
+#define TUDAT_REFERENCE_ANGLES_H
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
@@ -33,21 +33,71 @@ namespace reference_frames
 //! Compute the angle between the inertial and rotating geocentric reference frame.
 /*!
  * This function computes the angle between the inertial and rotating geocentric reference
- * frames, based on the empirically derived relations of USNO (2011). Note that short-term motion
+ * frames using the Greenwich Mean Sidereal Time(GMST). Note that short-term motion
  * of the equinox due to nutation is not considered.
  *
- * Reference:
- *      USNO (2011), Explanatory Supplement to the Astronomical Almanac, The U.S. Naval
- *          Observatory, p. 50.
+ * References:
+ *      GMST: Montenbruck, O. & Gill, E. Satellite Orbits Models, Methods and Applications, Springer, 2001 (page 167)
+ *      Angle computation: https://celestrak.com/columns/v02n02/
  *
  * \param julianDate julian date at time of interest
- *
+ * \return vernal offset in radians
  */
 double computeVernalOffset( double julianDate );
 
 
+//! Compute aerodynamic angles
+/*!
+ * This function computes the aerodynamic angles.
+ *
+ * Note:
+ *      This function does not include the difference between airspeed and groundspeed based aerodynamic angles
+ *
+ * Reference:
+ *      Mulder, J.; van Staveren, W.; van der Vaart, J.; de Weerdt, E.; de Visser, C.; in ’t Veld, A. & Mooij, E. Flight Dynamics - Lecture Notes 2013
+ *
+ * \param longitude
+ * \param latitude
+ * \param time in seconds since the J2000 epoch
+ * \param flightPathAngle
+ * \param headingAngle
+ * \param Body to inertial frame transformation matrix
+ * \return aerodynamic angles = angle of attack, angle of sideslip , bank angle in radians
+ */
+Eigen::Vector3d computeAerodynamicAngles(double longitude,
+                         double latitude,
+                         double time,
+                         double flightPathAngle,
+                         double headingAngle,
+                         Eigen::Matrix3d BodyFrameToInertialFrameTransformationMatrix);
+
+
+//! Compute aerodynamic angles
+/*!
+ * This function computes the aerodynamic angles.
+ *
+ * Note:
+ *      This function does not include the difference between airspeed and groundspeed based aerodynamic angles
+ *
+ * Reference:
+ *      Mulder, J.; van Staveren, W.; van der Vaart, J.; de Weerdt, E.; de Visser, C.; in ’t Veld, A. & Mooij, E. Flight Dynamics - Lecture Notes 2013
+ *
+ * \param longitude
+ * \param latitude
+ * \param time in seconds since the J2000 epoch
+ * \param flightPathAngle
+ * \param headingAngle
+ * \param Body to inertial frame transformation quaternion
+ * \return aerodynamic angles = angle of attack, angle of sideslip , bank angle in radians
+ */
+Eigen::Vector3d computeAerodynamicAngles(double longitude,
+                         double latitude,
+                         double time,
+                         double flightPathAngle,
+                         double headingAngle,
+                         Eigen::Quaterniond BodyFrameToInertialFrameTransformationMatrix);
 
 } // namespace reference_frame_transformations
 } // namespace tudatApp
 
-#endif // TUDAT_COMPUTE_VERNAL_OFFSET_H
+#endif // TUDAT_REFERENCE_ANGLES_H

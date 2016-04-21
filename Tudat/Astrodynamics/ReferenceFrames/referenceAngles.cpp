@@ -18,6 +18,8 @@
  */
 
 #include <tudat/Astrodynamics/ReferenceFrames/referenceAngles.h>
+#include <tudat/Astrodynamics/ReferenceFrames/referenceFrameTransformations.h>
+#include <tudat/Astrodynamics/BasicAstrodynamics/timeConversions.h>
 
 #include <cmath>
 
@@ -37,30 +39,80 @@ double computeVernalOffset( double julianDate )
     using tudat::basic_astrodynamics::JULIAN_DAY_ON_J2000;
     using tudat::basic_mathematics::computeModulo ;
 
-    double julianDatePreviousMidnight = std::floor(julianDate-0.5)+0.5 ;
+    double julianDatePreviousMidnight = std::floor(julianDate-0.5)+0.5 ; // 0h UT1
     double julianDateSinceJ2000 = julianDatePreviousMidnight - JULIAN_DAY_ON_J2000 ;
-    double centuriesSince2000 = julianDateSinceJ2000/36525.0;
+    double centuries0hUT1SinceJ2000 = julianDateSinceJ2000/36525.0; // T0
+    double centuriesSinceJ2000 = ( julianDate - JULIAN_DAY_ON_J2000 )/36525.0; // T
 
-    // Code: A. Ronse
-//    double greenwhichMeanSiderealTime = 24110.54841 +
-//            8640184.812866 * centuriesSince2000 +
-//            1.00273790935 * (julianDate - julianDatePreviousMidnight) * 86400.0 +
-//            0.093104 * centuriesSince2000 * centuriesSince2000 +
-//            - centuriesSince2000 * centuriesSince2000 * centuriesSince2000 * 6.2E-6 ; // effect -1.50568e-008
+    // Compute GMST
+    double greenwhichMeanSiderealTime = 24110.54841
+            + 8640184.812866 * centuries0hUT1SinceJ2000
+            + 1.00273790935 * (julianDate - julianDatePreviousMidnight) * 86400.0 +
+            + 0.093104 * centuriesSinceJ2000 * centuriesSinceJ2000
+            - centuriesSinceJ2000 * centuriesSinceJ2000 * centuriesSinceJ2000 * 6.2E-6 ;
 
-    // Code: report A. Ronse
-//    double greenwhichMeanSiderealTime = 24110.54841 +
-//            236.55536 * julianDateSinceJ2000 +
-//            1.00273790935 * (julianDate - julianDatePreviousMidnight) * 86400.0 +
-//            0.093104 * centuriesSince2000 * centuriesSince2000;
-
-    // Code http://aa.usno.navy.mil/faq/docs/GAST.php
-    double greenwhichMeanSiderealTime = (6.697374558 +
-            0.06570982441908 * julianDateSinceJ2000 +
-            1.00273790935 * (julianDate - julianDatePreviousMidnight) * 24.0 +
-            0.000026 * centuriesSince2000 * centuriesSince2000) * 3600;
-
+    // Return vernal offset
     return 2.0 * tudat::mathematical_constants::PI * computeModulo<double>(greenwhichMeanSiderealTime , 86400.0) / 86400.0;
+}
+
+//! Compute aerodynamic angles
+Eigen::Vector3d computeAerodynamicAngles(double longitude,
+                         double latitude,
+                         double time,
+                         double flightPathAngle,
+                         double headingAngle,
+                         Eigen::Matrix3d BodyFrameToInertialFrameTransformationMatrix){
+    using namespace tudat::reference_frames;
+
+    Eigen::Matrix3d localVerticalToRotatingPlanetocentricFrameTransformationMatrix =
+            getLocalVerticalToRotatingPlanetocentricFrameTransformationMatrix( longitude, latitude ) ;
+    double vernalOffset = computeVernalOffset(
+                tudat::basic_astrodynamics::convertSecondsSinceEpochToJulianDay(time) ) ;
+
+    // Compute transformation matrix
+    // rotationMatrix = C_TV * C_VR * C_RI * C_IB = Trajectory <- Body
+    Eigen::Matrix3d rotationMatrix =
+            getLocalVerticalFrameToTrajectoryTransformationMatrix( flightPathAngle , headingAngle ) *
+             localVerticalToRotatingPlanetocentricFrameTransformationMatrix.transpose() *
+            getInertialToPlanetocentricFrameTransformationMatrix( vernalOffset ) *
+            BodyFrameToInertialFrameTransformationMatrix ;
+
+    // compute aerodynamic angles
+    Eigen::Vector3d aerodynamicAngles;
+    aerodynamicAngles(0) = std::atan( rotationMatrix(0,2) / rotationMatrix(0,0) );      // Angle of attack
+    aerodynamicAngles(1) = std::asin( rotationMatrix(0,1) ) ;                           // Angle of sideslip
+    aerodynamicAngles(2) = - std::atan( rotationMatrix(2,1) / rotationMatrix(1,1) ) ;   // bank angle
+    return aerodynamicAngles;
+}
+
+//! Compute aerodynamic angles
+Eigen::Vector3d computeAerodynamicAngles(double longitude,
+                         double latitude,
+                         double time,
+                         double flightPathAngle,
+                         double headingAngle,
+                         Eigen::Quaterniond BodyFrameToInertialFrameTransformationMatrix){
+    using namespace tudat::reference_frames;
+
+    Eigen::Matrix3d localVerticalToRotatingPlanetocentricFrameTransformationMatrix =
+            getLocalVerticalToRotatingPlanetocentricFrameTransformationMatrix( longitude, latitude ) ;
+    double vernalOffset = computeVernalOffset(
+                tudat::basic_astrodynamics::convertSecondsSinceEpochToJulianDay(time) ) ;
+
+    // Compute transformation matrix
+    // rotationMatrix = C_TV * C_VR * C_RI * C_IB = Trajectory <- Body
+    Eigen::Matrix3d rotationMatrix =
+            getLocalVerticalFrameToTrajectoryTransformationMatrix( flightPathAngle , headingAngle ) *
+             localVerticalToRotatingPlanetocentricFrameTransformationMatrix.transpose() *
+            getInertialToPlanetocentricFrameTransformationMatrix( vernalOffset ) *
+            BodyFrameToInertialFrameTransformationMatrix ;
+
+    // compute aerodynamic angles
+    Eigen::Vector3d aerodynamicAngles;
+    aerodynamicAngles(0) = std::atan( rotationMatrix(0,2) / rotationMatrix(0,0) );      // Angle of attack
+    aerodynamicAngles(1) = std::asin( rotationMatrix(0,1) ) ;                           // Angle of sideslip
+    aerodynamicAngles(2) = - std::atan( rotationMatrix(2,1) / rotationMatrix(1,1) ) ;   // bank angle
+    return aerodynamicAngles;
 }
 
 } // namespace reference_frames
