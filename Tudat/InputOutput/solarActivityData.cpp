@@ -132,6 +132,7 @@ SolarActivityDataMap readSolarActivityData(std::string filePath){
     dataFile.open(filePath.c_str(), std::ifstream::in);
     if( !dataFile.is_open() ){
         std::cerr << "Solar Activity data file could not be opened" << std::endl;
+        std::cerr << "File path may be incorrect: " << filePath << std::endl;
         return DataMap;
     }
 
