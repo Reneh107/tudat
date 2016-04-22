@@ -116,6 +116,9 @@ std::ostream& operator<<( std::ostream& stream,
 
 //! This function reads a SpaceWeather data file and returns a map with SolarActivityData
 SolarActivityDataMap readSolarActivityData(std::string filePath){
+    // Datamap
+    SolarActivityDataMap DataMap ;
+
     // Data Vector container
     tudat::input_output::parsed_data_vector_utilities::ParsedDataVectorPtr parsedDataVectorPtr;
 
@@ -127,11 +130,15 @@ SolarActivityDataMap readSolarActivityData(std::string filePath){
     // Open dataFile and Parse
     std::ifstream dataFile;
     dataFile.open(filePath.c_str(), std::ifstream::in);
+    if( !dataFile.is_open() ){
+        std::cerr << "Solar Activity data file could not be opened" << std::endl;
+        return DataMap;
+    }
+
     parsedDataVectorPtr = solarActivityParser.parse( dataFile );
     dataFile.close();
 
     int numberOfLines = parsedDataVectorPtr->size() ;
-    SolarActivityDataMap DataMap ;
     double JulianDate ;
 
     // Save each line to datamap

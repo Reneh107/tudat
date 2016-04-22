@@ -183,6 +183,29 @@ BOOST_AUTO_TEST_CASE( test_function_readSolarActivityData ){
     BOOST_CHECK_EQUAL(  it->second->internationalSunspotNumber , 31 ) ;
 }
 
+BOOST_AUTO_TEST_CASE( test_function_readSolarActivityData_incorrect_filepath ){
+    using tudat::input_output::solar_activity::SolarActivityDataMap ;
+    using tudat::input_output::solar_activity::SolarActivityData ;
+
+    // Parse file
+    // save path of cpp file
+    std::string cppPath( __FILE__ );
+
+    // Strip filename from temporary string and return root-path string.
+    std::string folder = cppPath.substr( 0, cppPath.find_last_of("/\\")+1);
+    std::string filePath = folder + "incorrectFileName.txt" ;
+
+    SolarActivityDataMap SolarActivity = tudat::input_output::solar_activity::readSolarActivityData(filePath) ;
+    int isDataMapEmpty; // 1 is empty
+    if( SolarActivity.empty() ){
+        isDataMapEmpty = 1 ;
+    }
+    else{
+        isDataMapEmpty = 0 ;
+    }
+    BOOST_CHECK_EQUAL( isDataMapEmpty , 1 );
+}
+
 BOOST_AUTO_TEST_SUITE_END( )
 
 }   // unit_tests

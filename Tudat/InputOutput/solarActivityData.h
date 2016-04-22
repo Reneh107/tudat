@@ -190,7 +190,8 @@ typedef std::map< double , SolarActivityDataPtr >  SolarActivityDataMap ;
 
 //! Function that reads a SpaceWeather data file
 /*!
- * This function reads a SpaceWeather data file and returns a map with SolarActivityData
+ * This function reads a SpaceWeather data file and returns a map with SolarActivityData.
+ * It returns an empty datamap if the file could not be opened.
  *
  * \param filePath std::string
  * \return solarActivityDataMap std::map< double , SolarActivityDataPtr >
