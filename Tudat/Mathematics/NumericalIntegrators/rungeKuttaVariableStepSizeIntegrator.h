@@ -593,6 +593,7 @@ RungeKuttaVariableStepSizeIntegrator< IndependentVariableType, StateType, StateD
     {
         if( continueIntegrationIfMinimumStepSizeExceeded_ ){ // No exception
             this->stepSize_ = this->minimumStepSize_ ;
+            newStepSizePair.second = true; // Accept new stepsize
         }
         else{
             boost::throw_exception(
