@@ -160,6 +160,7 @@ public:
             const IndependentVariableType maximumStepSize,
             const StateType& relativeErrorTolerance,
             const StateType& absoluteErrorTolerance,
+            const bool continueIntegrationIfStepSizeExceeded = false,
             const IndependentVariableType safetyFactorForNextStepSize = 0.8,
             const IndependentVariableType maximumFactorIncreaseForNextStepSize = 4.0,
             const IndependentVariableType minimumFactorDecreaseForNextStepSize = 0.1,
@@ -173,6 +174,7 @@ public:
         maximumStepSize_( std::fabs( maximumStepSize ) ),
         relativeErrorTolerance_( relativeErrorTolerance.array().abs( ) ),
         absoluteErrorTolerance_( absoluteErrorTolerance.array().abs( ) ),
+        continueIntegrationIfMinimumStepSizeExceeded_( continueIntegrationIfStepSizeExceeded ),
         safetyFactorForNextStepSize_( std::fabs( safetyFactorForNextStepSize ) ),
         maximumFactorIncreaseForNextStepSize_( std::fabs( maximumFactorIncreaseForNextStepSize ) ),
         minimumFactorDecreaseForNextStepSize_( std::fabs( minimumFactorDecreaseForNextStepSize ) ),
@@ -220,6 +222,7 @@ public:
             const IndependentVariableType maximumStepSize,
             const typename StateType::Scalar relativeErrorTolerance,
             const typename StateType::Scalar absoluteErrorTolerance,
+            const bool continueIntegrationIfStepSizeExceeded = false,
             const IndependentVariableType safetyFactorForNextStepSize = 0.8,
             const IndependentVariableType maximumFactorIncreaseForNextStepSize = 4.0,
             const IndependentVariableType minimumFactorDecreaseForNextStepSize = 0.1,
@@ -235,6 +238,7 @@ public:
                                                       std::fabs( relativeErrorTolerance ) ) ),
         absoluteErrorTolerance_( StateType::Constant( initialState.rows( ), initialState.cols( ),
                                                       std::fabs( absoluteErrorTolerance ) ) ),
+        continueIntegrationIfMinimumStepSizeExceeded_( continueIntegrationIfStepSizeExceeded ),
         safetyFactorForNextStepSize_( std::fabs( safetyFactorForNextStepSize ) ),
         maximumFactorIncreaseForNextStepSize_( std::fabs( maximumFactorIncreaseForNextStepSize ) ),
         minimumFactorDecreaseForNextStepSize_( std::fabs( minimumFactorDecreaseForNextStepSize ) ),
@@ -465,6 +469,12 @@ protected:
      * Vector of state derivatives, i.e. values of k_{i} in Runge-Kutta scheme.
      */
     std::vector< StateDerivativeType > currentStateDerivatives_;
+
+    //! Boolean that defines if integration should be continued if the minimum step size is exceeded.
+    /*!
+     * Boolean that defines if integration should be continued with the minimum step size if the minimum step size is exceeded.
+     */
+    bool continueIntegrationIfMinimumStepSizeExceeded_;
 };
 
 //! Perform a single integration step.
@@ -581,10 +591,15 @@ RungeKuttaVariableStepSizeIntegrator< IndependentVariableType, StateType, StateD
     // Check if minimum step size is violated and throw exception if necessary.
     if ( std::fabs( this->stepSize_ ) < this->minimumStepSize_ )
     {
-        boost::throw_exception(
-                    boost::enable_error_info(
-                        MinimumStepSizeExceededError( this->minimumStepSize_,
-                                                      std::fabs( this->stepSize_ ) ) ) );
+        if( continueIntegrationIfMinimumStepSizeExceeded_ ){ // No exception
+            this->stepSize_ = this->minimumStepSize_ ;
+        }
+        else{
+            boost::throw_exception(
+                        boost::enable_error_info(
+                            MinimumStepSizeExceededError( this->minimumStepSize_,
+                                                          std::fabs( this->stepSize_ ) ) ) );
+        }
     }
 
     else if ( std::fabs( this->stepSize_ ) > this->maximumStepSize_ )
