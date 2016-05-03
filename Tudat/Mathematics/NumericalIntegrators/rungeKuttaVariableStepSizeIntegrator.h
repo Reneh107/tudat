@@ -433,6 +433,12 @@ protected:
      */
     StateType absoluteErrorTolerance_;
 
+    //! Boolean that defines if integration should be continued if the minimum step size is exceeded.
+    /*!
+     * Boolean that defines if integration should be continued with the minimum step size if the minimum step size is exceeded.
+     */
+    bool continueIntegrationIfMinimumStepSizeExceeded_;
+
     //! Safety factor for next step size.
     /*!
      * Safety factor used to scale prediction of next step size. This is usually picked between
@@ -469,12 +475,6 @@ protected:
      * Vector of state derivatives, i.e. values of k_{i} in Runge-Kutta scheme.
      */
     std::vector< StateDerivativeType > currentStateDerivatives_;
-
-    //! Boolean that defines if integration should be continued if the minimum step size is exceeded.
-    /*!
-     * Boolean that defines if integration should be continued with the minimum step size if the minimum step size is exceeded.
-     */
-    bool continueIntegrationIfMinimumStepSizeExceeded_;
 };
 
 //! Perform a single integration step.
