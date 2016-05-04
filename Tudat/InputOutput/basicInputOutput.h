@@ -370,6 +370,97 @@ void writeDataMapToTextFile( const std::map< KeyType, Eigen::Matrix< ScalarType,
                                    " " );
 }
 
+template< typename OutputStream >
+void writeStdValueToStream( OutputStream& stream, const std::vector<Eigen::VectorXd>& value,
+                         const int precision, const std::string& delimiter )
+{
+    for (unsigned int k = 0 ; k < value.size() ; k++){
+        for ( int i = 0; i < value[k].rows( ); i++ )
+        {
+            for ( int j = 0; j < value[k].cols( ); j++ )
+            {
+                stream << std::setprecision( precision ) << std::left
+                       << std::setw( precision + 1 )
+                       << value[k]( i, j );
+                if( !(k == (value.size()-1) && i == (value[k].rows()-1) && j == (value[k].cols()-1)) ){
+                    stream << delimiter << " " ;
+                }
+            }
+        }
+    }
+    stream << std::endl;
+}
+
+template< typename OutputStream >
+void writeStdValueToStream( OutputStream& stream, const Eigen::VectorXd& value,
+                         const int precision, const std::string& delimiter )
+{
+    for(int j = 0 ; j < value.rows() ; j++){
+        stream << std::setprecision( precision ) << std::left
+               << std::setw( precision + 1 )
+               << value(  j );
+        if( !(j == (value.rows()-1)) ){
+            stream << delimiter << " " ;
+        }
+    }
+    stream << std::endl;
+}
+
+template< typename OutputStream >
+void writeStdValueToStream( OutputStream& stream, const std::vector<double>& value,
+                         const int precision, const std::string& delimiter )
+{
+    for (unsigned int k = 0 ; k < value.size() ; k++){
+        stream << std::setprecision( precision ) << std::left
+               << std::setw( precision + 1 )
+               << value[k];
+        if( !(k == (value.size()-1) ) ){
+            stream << delimiter << " " ;
+        }
+    }
+    stream << std::endl;
+}
+
+template< typename OutputStream >
+void writeStdValueToStream( OutputStream& stream, const double& value,
+                         const int precision, const std::string& delimiter )
+{
+    stream << std::setprecision( precision ) << std::left
+           << std::setw( precision + 1 )
+           << value;
+    stream << delimiter << " " ;
+    stream << std::endl;
+}
+
+template< typename ContentType >
+void writeStdVectorToTextFile(
+        std::vector<ContentType> Vector,
+        const std::string& outputFilename,
+        const boost::filesystem::path& outputDirectory, const std::string& fileHeader,
+        const int precisionOfValueType,
+        const std::string& delimiter )
+{
+    // Check if output directory exists; create it if it doesn't.
+    if ( !boost::filesystem::exists( outputDirectory ) )
+    {
+        boost::filesystem::create_directories( outputDirectory );
+    }
+
+    // Open output file.
+    std::string outputDirectoryAndFilename = outputDirectory.string( ) + "/" + outputFilename;
+    std::ofstream outputFile_( outputDirectoryAndFilename.c_str( ) );
+
+    // Write file header to file.
+    outputFile_ << fileHeader;
+
+    // Loop over Vector
+    for(unsigned int i = 0 ; i < Vector.size() ; i++){
+        writeStdValueToStream(outputFile_, Vector[i] , precisionOfValueType, delimiter) ;
+    }
+    // Close output file.
+    outputFile_.close( );
+}
+
 //! Typedef for double-KeyType, double-ValueType map.
 /*!
  * Typedef for double-KeyType, double-ValueType map.
