@@ -78,5 +78,23 @@ double convertCalendarDateToJulianDay( const int calendarYear,
     return julianDay + dayFraction - 0.5;
 }
 
+//! Compute the Julian day from the calendar date and time.
+double convertYearAndDayToJulianDay( const int calendarYear,
+                                     const double day )
+{
+    int dayOfYear = static_cast< int >( std::floor( day ) );
+    double dayFraction = day - std::floor( day ) ;
+
+    boost::gregorian::date date(calendarYear,1,1);
+    date += boost::gregorian::days( dayOfYear ) ;
+
+    // Calculate julian day of calendar date.
+    double julianDay = date.julian_day( );
+
+    // Compute Julian day by adding day fraction and subtracting 0.5 to reference to midnight
+    // instead of noon..
+    return julianDay + dayFraction - 0.5;
+}
+
 } // namespace basic_astrodynamics
 } // namespace tudat

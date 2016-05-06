@@ -93,6 +93,17 @@ double convertCalendarDateToJulianDay( const int calendarYear,
                                        const int calendarMinutes,
                                        const double calendarSeconds );
 
+//! Compute Julian day from given date and time
+/*!
+  * Computes the Julian day from given year and the day of the year.
+  * The function uses the internal calcualtions of the boost::date_time::gregorian class.
+  *
+  * \param calendarYear Year of the standard calendar in years.
+  * \param day Day of the year including day fraction.
+  */
+double convertYearAndDayToJulianDay( const int calendarYear,
+                                       const double day);
+
 
 } // namespace basic_astrodynamics
 } // tudat
