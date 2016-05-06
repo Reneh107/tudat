@@ -61,28 +61,16 @@ Eigen::Vector3d computeAerodynamicAngles(double longitude,
                          double time,
                          double flightPathAngle,
                          double headingAngle,
-                         Eigen::Matrix3d BodyFrameToInertialFrameTransformationMatrix){
-    using namespace tudat::reference_frames;
+                         Eigen::Matrix3d bodyFrameToInertialFrameTransformationMatrix){
 
-    Eigen::Matrix3d localVerticalToRotatingPlanetocentricFrameTransformationMatrix =
-            getLocalVerticalToRotatingPlanetocentricFrameTransformationMatrix( longitude, latitude ) ;
-    double vernalOffset = computeVernalOffset(
-                tudat::basic_astrodynamics::convertSecondsSinceEpochToJulianDay(time) ) ;
+    Eigen::Quaterniond quaternion( bodyFrameToInertialFrameTransformationMatrix ) ;
 
-    // Compute transformation matrix
-    // rotationMatrix = C_TV * C_VR * C_RI * C_IB = Trajectory <- Body
-    Eigen::Matrix3d rotationMatrix =
-            getLocalVerticalFrameToTrajectoryTransformationMatrix( flightPathAngle , headingAngle ) *
-             localVerticalToRotatingPlanetocentricFrameTransformationMatrix.transpose() *
-            getInertialToPlanetocentricFrameTransformationMatrix( vernalOffset ) *
-            BodyFrameToInertialFrameTransformationMatrix ;
-
-    // compute aerodynamic angles
-    Eigen::Vector3d aerodynamicAngles;
-    aerodynamicAngles(0) = std::atan( rotationMatrix(0,2) / rotationMatrix(0,0) );      // Angle of attack
-    aerodynamicAngles(1) = std::asin( rotationMatrix(0,1) ) ;                           // Angle of sideslip
-    aerodynamicAngles(2) = - std::atan( rotationMatrix(2,1) / rotationMatrix(1,1) ) ;   // bank angle
-    return aerodynamicAngles;
+    return computeAerodynamicAngles(longitude,
+                                    latitude,
+                                    time,
+                                    flightPathAngle,
+                                    headingAngle,
+                                    quaternion);
 }
 
 //! Compute aerodynamic angles
@@ -91,7 +79,7 @@ Eigen::Vector3d computeAerodynamicAngles(double longitude,
                          double time,
                          double flightPathAngle,
                          double headingAngle,
-                         Eigen::Quaterniond BodyFrameToInertialFrameTransformationMatrix){
+                         Eigen::Quaterniond bodyFrameToInertialFrameTransformationQuaternion){
     using namespace tudat::reference_frames;
 
     Eigen::Matrix3d localVerticalToRotatingPlanetocentricFrameTransformationMatrix =
@@ -105,7 +93,7 @@ Eigen::Vector3d computeAerodynamicAngles(double longitude,
             getLocalVerticalFrameToTrajectoryTransformationMatrix( flightPathAngle , headingAngle ) *
              localVerticalToRotatingPlanetocentricFrameTransformationMatrix.transpose() *
             getInertialToPlanetocentricFrameTransformationMatrix( vernalOffset ) *
-            BodyFrameToInertialFrameTransformationMatrix ;
+            bodyFrameToInertialFrameTransformationQuaternion ;
 
     // compute aerodynamic angles
     Eigen::Vector3d aerodynamicAngles;

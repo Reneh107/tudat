@@ -32,8 +32,8 @@ namespace reference_frames
 
 //! Compute the angle between the inertial and rotating geocentric reference frame.
 /*!
- * This function computes the angle between the inertial and rotating geocentric reference
- * frames using the Greenwich Mean Sidereal Time(GMST). Note that short-term motion
+ * This function computes the angle from the inertial (J2000) frame to the rotating geocentric reference
+ * frame using the Greenwich Mean Sidereal Time(GMST). Note that short-term motion
  * of the equinox due to nutation is not considered.
  *
  * References:
@@ -69,7 +69,7 @@ Eigen::Vector3d computeAerodynamicAngles(double longitude,
                          double time,
                          double flightPathAngle,
                          double headingAngle,
-                         Eigen::Matrix3d BodyFrameToInertialFrameTransformationMatrix);
+                         Eigen::Matrix3d bodyFrameToInertialFrameTransformationMatrix);
 
 
 //! Compute aerodynamic angles
@@ -95,7 +95,7 @@ Eigen::Vector3d computeAerodynamicAngles(double longitude,
                          double time,
                          double flightPathAngle,
                          double headingAngle,
-                         Eigen::Quaterniond BodyFrameToInertialFrameTransformationMatrix);
+                         Eigen::Quaterniond bodyFrameToInertialFrameTransformationQuaternion);
 
 } // namespace reference_frame_transformations
 } // namespace tudatApp

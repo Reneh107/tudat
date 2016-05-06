@@ -62,4 +62,4 @@ target_link_libraries(test_ApparentAccelerationModel tudat_reference_frames ${Bo
 
 add_executable(test_ReferenceAngles "${SRCROOT}${REFERENCEFRAMESDIR}/UnitTests/unitTestReferenceAngles.cpp")
 setup_custom_test_program(test_ReferenceAngles "${SRCROOT}${REFERENCEFRAMESDIR}")
-target_link_libraries(test_ReferenceAngles tudat_reference_frames ${Boost_LIBRARIES})
+target_link_libraries(test_ReferenceAngles tudat_reference_frames tudat_basic_astrodynamics ${Boost_LIBRARIES})
