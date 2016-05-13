@@ -116,6 +116,44 @@ BOOST_AUTO_TEST_CASE( testSampleVariance )
                                 std::numeric_limits< double >::epsilon( ) );
 }
 
+//! Test if sample median is computed correctly.
+BOOST_AUTO_TEST_CASE( testSampleMedian )
+{
+    // Declare vector of sample data.
+    std::vector< double > sampleData;
+
+    // Populate vector with odd number of samples.
+    sampleData.push_back( 6.4 );
+    sampleData.push_back( 2.5 );
+    sampleData.push_back( 12.7 );
+    sampleData.push_back( 8.9 );
+    sampleData.push_back( 15.0 );
+
+    // Expected sample median calculated using MATLAB
+    double expectedSampleMedian = 8.9 ;
+
+    // Computed sample median
+    double computedSampleMedian = statistics::computeSampleMedian( sampleData );
+
+    // Check if computed sample median matches expected value.
+    BOOST_CHECK_CLOSE_FRACTION( expectedSampleMedian, computedSampleMedian,
+                                std::numeric_limits< double >::epsilon( ) );
+
+    // Add value to samples to get an even number of samples.
+    sampleData.push_back( 13.0 );
+
+    // Expected sample median calculated using MATLAB
+    expectedSampleMedian = 10.8 ;
+
+    // Computed sample median
+    computedSampleMedian = statistics::computeSampleMedian( sampleData );
+
+    // Check if computed sample median matches expected value.
+    BOOST_CHECK_CLOSE_FRACTION( expectedSampleMedian, computedSampleMedian,
+                                std::numeric_limits< double >::epsilon( ) );
+
+}
+
 BOOST_AUTO_TEST_SUITE_END( )
 
 } // namespace unit_tests
