@@ -80,7 +80,7 @@ public:
      * \param IndependentVariableType x sample of random variable.
      * \return cumulative probability.
      */
-    virtual double getCumulativeProbability( IndependentVariableType x )
+    virtual double getCumulativeProbability( const IndependentVariableType& x )
     {
         return TUDAT_NAN;
     }
@@ -122,7 +122,7 @@ public:
     double getProbabilityDensity( const double& x );
 
     //! Get cumulative probability.
-    double getCumulativeProbability( double x );
+    double getCumulativeProbability( const double& x );
 
 protected:
 private:
@@ -203,7 +203,7 @@ public:
     double getProbabilityDensity( const double& x );
 
     //! Get cumulative probability.
-    double getCumulativeProbability( double x );
+    double getCumulativeProbability( const double& x );
 
     //! Get Quantile (Inverse CDF)
     double getQuantile( double x );

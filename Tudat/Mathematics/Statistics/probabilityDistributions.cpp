@@ -61,13 +61,13 @@ GaussianDistributiond::GaussianDistributiond(double Mean, double StandardDeviati
 }
 
 //! Get probability density of 1D Gaussian distribution
-double GaussianDistributiond::getProbabilityDensity(double x){
+double GaussianDistributiond::getProbabilityDensity(const double& x){
     return (std::exp( ( - std::pow( x - mean_ , 2.0 ) ) / ( 2.0 * variance_ ) )
             /( std::sqrt( 2.0 * PI ) * standardDeviation_ ) ) ;
 }
 
 //! Get cumulative probability of 1D Gaussian distribution
-double GaussianDistributiond::getCumulativeProbability(double x){
+double GaussianDistributiond::getCumulativeProbability(const double &x){
     boost::math::normal distribution(mean_, standardDeviation_);
     return boost::math::cdf( distribution , x );
 }
@@ -81,7 +81,7 @@ UniformDistributiond::UniformDistributiond(double LowerBound, double UpperBound)
 
 
 //! Get probability density of 1D Uniform distribution
-double UniformDistributiond::getProbabilityDensity(double x){
+double UniformDistributiond::getProbabilityDensity(const double& x){
     if ( (x >= lowerBound_ && x <= upperBound_ ) ){
         return probabilityDensity_ ;
     }
@@ -109,14 +109,14 @@ LogNormalDistributiond::LogNormalDistributiond( double Mean, double StandardDevi
 }
 
 //! Get probability density.
-double LogNormalDistributiond::getProbabilityDensity( double x )
+double LogNormalDistributiond::getProbabilityDensity( const double& x )
 {
     boost::math::lognormal distribution( locationParameter_ , scaleParameter_ );
     return boost::math::pdf( distribution , x );
 }
 
 //! Get cumulative probability.
-double LogNormalDistributiond::getCumulativeProbability( double x )
+double LogNormalDistributiond::getCumulativeProbability(const double &x )
 {
     boost::math::lognormal distribution( locationParameter_ , scaleParameter_ );
     return boost::math::cdf( distribution , x );
@@ -130,7 +130,7 @@ double LogNormalDistributiond::getQuantile( double x )
 }
 
 //! Get probability density of gaussian copula.
-double GaussianCopulaDistributionXd::getProbabilityDensity( Eigen::VectorXd x ){
+double GaussianCopulaDistributionXd::getProbabilityDensity( const Eigen::VectorXd& x ){
     double probabilityDensity = 0.0 ;
 
     // Check if vector x is inside [0,1]
