@@ -42,6 +42,9 @@
 #include <numeric>
 
 #include <tudat/Mathematics/Statistics/probabilityDistributions.h>
+#include <boost/math/special_functions/erf.hpp>
+#include <boost/math/distributions/normal.hpp>
+#include <boost/math/distributions/lognormal.hpp>
 
 namespace tudat
 {
@@ -61,6 +64,12 @@ GaussianDistributiond::GaussianDistributiond(double Mean, double StandardDeviati
 double GaussianDistributiond::getProbabilityDensity(double x){
     return (std::exp( ( - std::pow( x - mean_ , 2.0 ) ) / ( 2.0 * variance_ ) )
             /( std::sqrt( 2.0 * PI ) * standardDeviation_ ) ) ;
+}
+
+//! Get cumulative probability of 1D Gaussian distribution
+double GaussianDistributiond::getCumulativeProbability(double x){
+    boost::math::normal distribution(mean_, standardDeviation_);
+    return boost::math::cdf( distribution , x );
 }
 
 //! Constructor.
@@ -86,6 +95,69 @@ void UniformDistributiond::computeMeanAndStandardDeviation(){
     mean_ = (upperBound_ + lowerBound_)/2.0 ;
     variance_ = std::pow(upperBound_ - lowerBound_,2.0) / 12.0;
     standardDeviation_ = std::sqrt( variance_ );
+}
+
+//! Constructor of the lognormal distribution
+LogNormalDistributiond::LogNormalDistributiond( double Mean, double StandardDeviation )
+{
+    mean_ = Mean;
+    standardDeviation_ = StandardDeviation;
+    variance_ = std::pow( standardDeviation_ , 2.0 );
+
+    locationParameter_ = std::log( mean_ / ( std::sqrt( variance_ / std::pow( mean_ , 2.0 ) + 1.0 ) ) );
+    scaleParameter_ = std::sqrt( std::log( variance_ / std::pow( mean_ , 2.0 ) + 1.0 ) ) ;
+}
+
+//! Get probability density.
+double LogNormalDistributiond::getProbabilityDensity( double x )
+{
+    boost::math::lognormal distribution( locationParameter_ , scaleParameter_ );
+    return boost::math::pdf( distribution , x );
+}
+
+//! Get cumulative probability.
+double LogNormalDistributiond::getCumulativeProbability( double x )
+{
+    boost::math::lognormal distribution( locationParameter_ , scaleParameter_ );
+    return boost::math::cdf( distribution , x );
+}
+
+//! Get Quantile (Inverse CDF).
+double LogNormalDistributiond::getQuantile( double x )
+{
+    boost::math::lognormal distribution( locationParameter_ , scaleParameter_ );
+    return boost::math::quantile( distribution , x );
+}
+
+//! Get probability density of gaussian copula.
+double GaussianCopulaDistributionXd::getProbabilityDensity( Eigen::VectorXd x ){
+    double probabilityDensity = 0.0 ;
+
+    // Check if vector x is inside [0,1]
+    int InBound = 0 ;
+    for( int i = 0 ; i < dimension_ ; i++ ){ // check in bounds
+        if( x(i) > 0.0 && x(i) < 1.0 ){
+            InBound++ ;
+        }
+    }
+
+    if( InBound == dimension_ ){
+        // Convert U[0,1] to N[0,1] using inverse CDF of standard normal distribution
+        Eigen::VectorXd y( dimension_ ) ;
+        boost::math::normal distribution( 0.0 , 1.0 );
+
+        for(int i = 0 ; i < dimension_ ; i++){
+            y(i) = boost::math::quantile( distribution , x(i) ); // Inverse cdf
+        }
+
+        // Calculate probability density
+        Eigen::MatrixXd location = - 0.5 * ( y.transpose() *
+                       (inverseCorrelationMatrix_ - Eigen::MatrixXd::Identity( dimension_ , dimension_ ) ) * y ) ;
+
+        probabilityDensity = ( ( 1.0/( std::sqrt( determinant_ ) ) )*std::exp( location(0,0) ) ) ;
+    }
+
+    return probabilityDensity ;
 }
 
 } // namespace statistics

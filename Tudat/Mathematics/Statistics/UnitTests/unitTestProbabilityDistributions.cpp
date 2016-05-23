@@ -55,6 +55,8 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/make_shared.hpp>
 
+#include <boost/math/distributions/lognormal.hpp>
+
 #include "Tudat/Mathematics/Statistics/probabilityDistributions.h"
 
 namespace tudat
@@ -96,8 +98,9 @@ BOOST_AUTO_TEST_CASE( testUniformDistributionDouble )
 //! Test if 1D Gaussian distribution class works correctly.
 BOOST_AUTO_TEST_CASE( testGaussianDistributionDouble )
 {
-    // Compare PDF values with normpdf function of MATLAB.
+    // Compare PDF values with normpdf / normcdf function of MATLAB.
     double solutionMatlab;
+    double solutionMatlabMass;
     double mean ;
     double standardDeviation;
     double x ;
@@ -108,10 +111,13 @@ BOOST_AUTO_TEST_CASE( testGaussianDistributionDouble )
         standardDeviation  = 1.0 ;
         x = 0.0 ;
         solutionMatlab = 3.989422804014327e-01 ;
+        solutionMatlabMass = 0.5 ;
 
         tudat::statistics::GaussianDistributiond distribution(mean,standardDeviation);
 
         BOOST_CHECK_SMALL( std::fabs( distribution.getProbabilityDensity(x) - solutionMatlab ) ,
+                           std::numeric_limits<double>::epsilon() ) ;
+        BOOST_CHECK_SMALL( std::fabs( distribution.getCumulativeProbability(x) - solutionMatlabMass ) ,
                            std::numeric_limits<double>::epsilon() ) ;
     }
 
@@ -121,10 +127,13 @@ BOOST_AUTO_TEST_CASE( testGaussianDistributionDouble )
         standardDeviation  = 2.0 ;
         x = -1.0 ;
         solutionMatlab = 1.209853622595717e-01 ;
+        solutionMatlabMass = 1.586552539314571e-01 ;
 
         tudat::statistics::GaussianDistributiond distribution(mean,standardDeviation);
 
         BOOST_CHECK_SMALL( std::fabs( distribution.getProbabilityDensity(x) - solutionMatlab ) ,
+                           std::numeric_limits<double>::epsilon() ) ;
+        BOOST_CHECK_SMALL( std::fabs( distribution.getCumulativeProbability(x) - solutionMatlabMass ) ,
                            std::numeric_limits<double>::epsilon() ) ;
     }
 
@@ -134,12 +143,17 @@ BOOST_AUTO_TEST_CASE( testGaussianDistributionDouble )
         standardDeviation  = 6.0 ;
         x = 2.0 ;
         solutionMatlab = 6.557328601698999e-02 ;
+        solutionMatlabMass = 4.338161673890963e-01 ;
 
         tudat::statistics::GaussianDistributiond distribution(mean,standardDeviation);
 
         BOOST_CHECK_SMALL( std::fabs( distribution.getProbabilityDensity(x) - solutionMatlab ) ,
                            std::numeric_limits<double>::epsilon() ) ;
+        BOOST_CHECK_SMALL( std::fabs( distribution.getCumulativeProbability(x) - solutionMatlabMass ) ,
+                           std::numeric_limits<double>::epsilon() ) ;
     }
+
+
 
 }
 
@@ -156,7 +170,7 @@ BOOST_AUTO_TEST_CASE( testGaussianDistributionMultiD )
     Eigen::MatrixXd covariance(2,2);
     covariance <<   3.0 , -1.0 ,
                     -1.0 , 3.0 ;
-    GaussianDistributionXd<2> distribution(mean,covariance);
+    GaussianDistributionXd distribution(mean,covariance);
 
     Eigen::VectorXd x(2);
     x << 0.0 , 1.0 ;
@@ -191,7 +205,7 @@ BOOST_AUTO_TEST_CASE( testGaussianDistributionMultiD )
     muy = mean(1);
     rho = covariance(0,1) / (sigmax*sigmay) ;
 
-    GaussianDistributionXd<2> distribution2(mean,covariance);
+    GaussianDistributionXd distribution2(mean,covariance);
 
     // Exact solution of 2D Gaussian distribution
     // Montgomery, D. C. & Runger, G. C. Applied Statistics and Probability for engineers Wiley, 2014
@@ -204,6 +218,70 @@ BOOST_AUTO_TEST_CASE( testGaussianDistributionMultiD )
 
     BOOST_CHECK_SMALL( std::fabs( distribution2.getProbabilityDensity(x) - exactSolution ) ,
                        std::numeric_limits<double>::epsilon() ) ;
+}
+
+//! Test if Gaussian Copula distribution class works correctly.
+BOOST_AUTO_TEST_CASE( testGaussianCopula )
+{
+    using namespace tudat::statistics;
+    using tudat::mathematical_constants::PI;
+
+    int dimension = 2 ;
+    Eigen::MatrixXd correlationMatrix( dimension , dimension ) ;
+    correlationMatrix << 1.0 , 0.3 ,
+                         0.3 , 1.0 ;
+    GaussianCopulaDistributionXd distribution( dimension , correlationMatrix );
+
+    Eigen::VectorXd x(2);
+    x << 0.5 , 0.3 ;
+
+//    std::cout << distribution.getProbabilityDensity( x ) << std::endl;
+
+    // Test out of bounds
+    x << 1.1 , 0.5 ;
+    BOOST_CHECK_SMALL( std::fabs( distribution.getProbabilityDensity( x ) - 0.0 ) , 1E-15 );
+
+    x << 0.1 , -0.5 ;
+    BOOST_CHECK_SMALL( std::fabs( distribution.getProbabilityDensity( x ) - 0.0 ) , 1E-15 );
+
+    x << -0.1 , -0.5 ;
+    BOOST_CHECK_SMALL( std::fabs( distribution.getProbabilityDensity( x ) - 0.0 ) , 1E-15 );
+
+    x << 0.1 , 1.5 ;
+    BOOST_CHECK_SMALL( std::fabs( distribution.getProbabilityDensity( x ) - 0.0 ) , 1E-15 );
+
+    // ADD MORE TESTS!!!!!!!!!!!
+
+}
+
+//! Test if Log normal distribution class works correctly.
+BOOST_AUTO_TEST_CASE( test_log_normal_distribution )
+{
+
+    tudat::statistics::LogNormalDistributiond distribution( 2.0 , 0.5 );
+
+    double locationParameter = distribution.getLocationParameter();
+    double scaleParameter = distribution.getScaleParameter();
+
+    BOOST_CHECK_SMALL( std::fabs( locationParameter - 6.628348696517279e-01 ) , 1E-15 );
+    BOOST_CHECK_SMALL( std::fabs( scaleParameter - 2.462206770692398e-01 ) , 1E-15 );
+
+    boost::math::lognormal distributionBoost( locationParameter , scaleParameter );
+
+    double computedProbabilityDensity = distribution.getProbabilityDensity( 1.0 );
+
+    // Computed using MATLAB
+    double expectedProbabilityDensity = 4.324214246844349e-02 ;
+//    double expectedProbabilityDensity = boost::math::pdf( distributionBoost , 1.0 ) ;
+
+    BOOST_CHECK_SMALL( std::fabs( computedProbabilityDensity - expectedProbabilityDensity ) , 1.0E-15 );
+
+    double computedCumulativeProbability = distribution.getCumulativeProbability( 1.0 );
+
+    // Computed using MATLAB
+    double expectedCumulativeProbability = 3.550866413284351e-03 ;
+
+    BOOST_CHECK_SMALL( std::fabs( computedCumulativeProbability - expectedCumulativeProbability ) , 1.0E-15 );
 }
 
 BOOST_AUTO_TEST_SUITE_END( )

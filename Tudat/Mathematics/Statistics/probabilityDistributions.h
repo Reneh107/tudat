@@ -71,21 +71,31 @@ public:
      * \param IndependentVariableType x sample of random variable.
      * \return probability density.
      */
-    virtual double getProbabilityDensity(IndependentVariableType x) = 0 ;
+    virtual double getProbabilityDensity( const IndependentVariableType& x ) = 0 ;
 
-    //! Get Probability Mass?
+    //! Get Cumulative Probability
     /*!
-     * The function uses the cumulative distribution function to compute this value.
+     * The function uses the cumulative distribution function to compute the cumulative probability.
      * F(x) = P(X < x)
      * \param IndependentVariableType x sample of random variable.
-     * \return probability mass.
+     * \return cumulative probability.
      */
-//    virtual double getProbabilityMass(IndependentVariableType x) = 0 ;
+    virtual double getCumulativeProbability( IndependentVariableType x )
+    {
+        return TUDAT_NAN;
+    }
 
-    //! Get Quantile
-
-    //! Get inverse Cumulative
-    //! F^-1(x)
+    //! Get Quantile (REMOVE ONLY 1D)
+    /*!
+     * This function uses the cumulative probability.
+     * Inverse CDF
+     * \param IndependentVariableType x sample of random variable.
+     * \return quantile.
+     */
+    virtual double getQuantile( IndependentVariableType x )
+    {
+        return TUDAT_NAN;
+    }
 
 protected:
 
@@ -101,14 +111,18 @@ typedef boost::shared_ptr< ProbabilityDistribution<Eigen::VectorXd> > Probabilit
  * One-dimensional Gaussian distribution class.
  * Source: ??
  */
-class GaussianDistributiond: public ProbabilityDistribution<double>{
+class GaussianDistributiond: public ProbabilityDistribution<double>
+{
 public:
 
     //! Constructor.
-    GaussianDistributiond(double Mean, double StandardDeviation);
+    GaussianDistributiond( double Mean, double StandardDeviation );
 
     //! Get probability density.
-    double getProbabilityDensity(double x);
+    double getProbabilityDensity( const double& x );
+
+    //! Get cumulative probability.
+    double getCumulativeProbability( double x );
 
 protected:
 private:
@@ -127,11 +141,12 @@ private:
  * One-dimensional Uniform distribution class.
  * Source:
  */
-class UniformDistributiond: public ProbabilityDistribution<double> {
+class UniformDistributiond: public ProbabilityDistribution<double>
+{
 public:
 
     //! Constructor.
-    UniformDistributiond(double LowerBound, double UpperBound);
+    UniformDistributiond( double LowerBound, double UpperBound );
 
     //! Compute mean and standard deviation of distribution.
     void computeMeanAndStandardDeviation();
@@ -149,7 +164,7 @@ public:
     }
 
     //! Get probability density.
-    double getProbabilityDensity(double x);
+    double getProbabilityDensity(const double& x);
 
 protected:
 private:
@@ -172,14 +187,66 @@ private:
     double probabilityDensity_ ;
 };
 
+//! One-dimensional Lognormal distribution class.
+/*!
+ * One-dimensional Lognormal distribution class.
+ * Source: ??
+ */
+class LogNormalDistributiond: public ProbabilityDistribution<double>
+{
+public:
+
+    //! Constructor.
+    LogNormalDistributiond( double Mean, double StandardDeviation );
+
+    //! Get probability density.
+    double getProbabilityDensity( const double& x );
+
+    //! Get cumulative probability.
+    double getCumulativeProbability( double x );
+
+    //! Get Quantile (Inverse CDF)
+    double getQuantile( double x );
+
+    //! Get location parameter.
+    double getLocationParameter()
+    {
+        return locationParameter_;
+    }
+
+    //! Get scale parameter.
+    double getScaleParameter()
+    {
+        return scaleParameter_;
+    }
+
+
+protected:
+private:
+    //! Mean value of the distribution.
+    double mean_ ;
+
+    //! Standard deviation value of the distribution.
+    double standardDeviation_ ;
+
+    //! Variance value of the distribution.
+    double variance_ ;
+
+    //! Location parameter: Mean value of the log of the random variable.
+    double locationParameter_ ;
+
+    //! Scale parameter: Standard deviation of the log of the random variable.
+    double scaleParameter_ ;
+};
+
 
 //! Multi-dimensional Gaussian Distribution class.
 /*!
  * Multi-dimensional Gaussian Distribution class.
  * Source: ??
  */
-template< int Dimension >
-class GaussianDistributionXd: public ProbabilityDistribution<Eigen::VectorXd> {
+class GaussianDistributionXd: public ProbabilityDistribution<Eigen::VectorXd>
+{
 public:
 
     //! Constructor
@@ -188,17 +255,11 @@ public:
         covarianceMatrix_ = CovarianceMatrix ;
         dimension_ = double(mean_.rows()) ;
         determinant_ = CovarianceMatrix.determinant() ;
-
-        // inverse function needs to know what the dimension of the matrix is at compile time
-        typedef Eigen::Matrix<double,Dimension,Dimension> MatrixNd;
-        MatrixNd Covariance = covarianceMatrix_ ;
-        MatrixNd Inversecovariance = Covariance.inverse() ;
-
-        inverseCovarianceMatrix_ = Inversecovariance ;
+        inverseCovarianceMatrix_ = covarianceMatrix_.inverse() ;
     }
 
     //! Get probability density
-    double getProbabilityDensity(Eigen::VectorXd x){
+    double getProbabilityDensity( const Eigen::VectorXd& x ){
         using tudat::mathematical_constants::PI;
         Eigen::VectorXd u = (x - mean_) ;
         Eigen::MatrixXd location = -0.5*( u.transpose()*inverseCovarianceMatrix_*u ) ;
@@ -225,56 +286,98 @@ private:
 };
 
 
+//! Gaussian Copula Distribution class.
+/*!
+ * A Gaussian copula can be used to link several marginal distributions to form a joint distribution.
+ * Source: ??
+ */
+class GaussianCopulaDistributionXd: public ProbabilityDistribution< Eigen::VectorXd >
+{
+public:
+
+    //! Constructor
+    GaussianCopulaDistributionXd( int dimension , Eigen::MatrixXd correlationMatrix )
+    {
+        dimension_ = dimension;
+        correlationMatrix_ = correlationMatrix;
+
+        inverseCorrelationMatrix_ = correlationMatrix_.inverse() ;
+        determinant_ = correlationMatrix_.determinant() ;
+    }
+
+    //! Get probability density.
+    double getProbabilityDensity( const Eigen::VectorXd& x );
+
+protected:
+
+private:
+
+    //! Dimension of the copula
+    int dimension_;
+
+    //! Correlation matrix
+    Eigen::MatrixXd correlationMatrix_;
+
+    //! Inverse of the correlation matrix
+    Eigen::MatrixXd inverseCorrelationMatrix_;
+
+    //! determinant of the correlation matrix
+    double determinant_;
+};
+
+
+
+
+
+
+
+
 // //! Distribution of a random variable with uniform marginals and correlation using a Gaussian copula.
 //template< int Dimension >
-//class UniformCorrelatedDistributionND: public Distribution {
+//class UniformCorrelatedDistributionXd: public ProbabilityDistribution<Eigen::VectorXd> {
 //public:
-//    using Distribution::getProbability;
 
-//    UniformCorrelatedDistributionND(Eigen::VectorXd Mu , Eigen::MatrixXd CovarianceMatrix ){ // constructor
-//        mu = Mu ;
-//        covariancematrix = CovarianceMatrix ;
+//    UniformCorrelatedDistributionXd(Eigen::VectorXd Mean , Eigen::MatrixXd CovarianceMatrix ){
+//        mean_ = Mean ;
+//        covarianceMatrix_ = CovarianceMatrix ;
 
 //        // correlationmatrix
-//        correlationmatrix = Thesis::Statistics::Basics::Covariance2CorrelationMatrix(covariancematrix) ;
+//        correlationMatrix_ = Thesis::Statistics::Basics::Covariance2CorrelationMatrix(covarianceMatrix_) ;
 
-//        dimension = Mu.rows() ;
+//        dimension_ = mean_.rows() ;
 
 //        // determinant correlation matrix
-//        determinantCor = correlationmatrix.determinant() ;
+//        determinantCor = correlationMatrix_.determinant() ;
 
 //        // inverse function needs to know what the dimension of the matrix is at compile time
 //        typedef Eigen::Matrix<double,Dimension,Dimension> MatrixNd;
-//        MatrixNd Correlation = correlationmatrix ;
+//        MatrixNd Correlation = correlationMatrix_ ;
 //        MatrixNd Inversecorrelation = Correlation.inverse() ;
-//        inversecorrelation = Inversecorrelation ;
+//        inverseCorrelationMatrix_ = Inversecorrelation ;
 
 //        // Calculate bounds
-//        LeftBound.resize( Dimension ) ;
-//        RightBound.resize( Dimension ) ;
+//        lowerBound_.resize( Dimension ) ;
+//        upperBound_.resize( Dimension ) ;
 //        for(int i = 0 ; i < Dimension ; i++){
-//            LeftBound(i) = mu(i) - std::sqrt(3.0 * covariancematrix(i,i) ) ;
-//            RightBound(i) = mu(i) + std::sqrt(3.0 * covariancematrix(i,i) ) ;
+//            lowerBound_(i) = mean_(i) - std::sqrt(3.0 * covarianceMatrix_(i,i) ) ;
+//            upperBound_(i) = mean_(i) + std::sqrt(3.0 * covarianceMatrix_(i,i) ) ;
 //        }
-//        width = RightBound - LeftBound ;
+//        width = upperBound_ - lowerBound_ ;
 //        volume = width.prod() ; // product of marginal PDFs
-
-////        std::cout << "LeftBound = " << LeftBound << std::endl;
-////        std::cout << "RightBound = " << RightBound << std::endl;
 //    }
 
-//    double getProbability(Eigen::VectorXd x){
+//    double getProbabilityDensity(Eigen::VectorXd x){
 //        double probability = 0.0 ;
 
 //        int InBound = 0 ;
-//        for(int i = 0 ; i < dimension ; i++){ // check in bounds
-//            if( x(i) > LeftBound(i) && x(i) < RightBound(i) ){
+//        for(int i = 0 ; i < dimension_ ; i++){ // check in bounds
+//            if( x(i) > lowerBound_(i) && x(i) < upperBound_(i) ){
 //                InBound++ ;
 //            }
 //        }
-//        if(InBound == dimension){
+//        if(InBound == dimension_){
 //            // Convert uniform to U = [0,1] :  F(x) = x - a / (b-a) -> U = F_X(X)
-//            Eigen::VectorXd Fx = (x - LeftBound).cwiseQuotient( width ) ;
+//            Eigen::VectorXd Fx = (x - lowerBound_).cwiseQuotient( width ) ;
 
 //            // Convert U[0,1] to N[0,1] using inverse CDF of standard normal distribution
 //            Eigen::VectorXd y(Fx.rows()) ;
@@ -283,7 +386,7 @@ private:
 //            }
 
 //            // Calculate probability density
-//            Eigen::MatrixXd location = -0.5*( y.transpose()*(inversecorrelation - Eigen::MatrixXd::Identity(Dimension,Dimension) )*y ) ;
+//            Eigen::MatrixXd location = -0.5*( y.transpose()*(inverseCorrelationMatrix_ - Eigen::MatrixXd::Identity(Dimension,Dimension) )*y ) ;
 
 //            probability = ( ( 1.0/( volume * std::sqrt(determinantCor) ) )*std::exp( location(0,0) ) ) ;
 //        }
@@ -292,18 +395,36 @@ private:
 //    }
 
 //private:
-//    int                 dimension           ; // dimension of distribution
-//    Eigen::VectorXd     mu                  ; // vector of mean values
-//    Eigen::MatrixXd     covariancematrix    ; // covariance matrix of x
 
-//    Eigen::MatrixXd     correlationmatrix   ; // correlationmatrix of x
-//    double              determinantCor      ; // determinant of correlation matrix
-//    Eigen::MatrixXd     inversecorrelation  ; // inverse of the correlation matrix of x
+//    //! Dimension of the distribution
+//    int                 dimension_           ;
 
-//    Eigen::VectorXd     LeftBound           ; // leftbound of uniform marginal distributions
-//    Eigen::VectorXd     RightBound          ; // rightbound of uniform marginal distributions
-//    Eigen::VectorXd     width               ; // width of uniform marginal distributions
-//    double              volume              ; // volume of joint uniform distribution , product of marginal PDFs
+//    //! Vector of mean values of X
+//    Eigen::VectorXd     mean_                  ;
+
+//    //! Covariance matrix of X
+//    Eigen::MatrixXd     covarianceMatrix_    ;
+
+//    //! Correlation matrix of X
+//    Eigen::MatrixXd     correlationMatrix_   ;
+
+//    //! Determinant of correlation matrix
+//    double              determinantCor      ;
+
+//    //! Inverse of the correlation matrix
+//    Eigen::MatrixXd     inverseCorrelationMatrix_  ;
+
+//    //! Lowerbound of the uniform marginals
+//    Eigen::VectorXd     lowerBound_           ;
+
+//    //! Upperbound of the uniform marginals
+//    Eigen::VectorXd     upperBound_          ;
+
+//    //! Width of the uniform marginals
+//    Eigen::VectorXd     width               ;
+
+//    //! Volume of the distribution (product of the marginal PDFs)
+//    double              volume              ;
 //};
 
 
