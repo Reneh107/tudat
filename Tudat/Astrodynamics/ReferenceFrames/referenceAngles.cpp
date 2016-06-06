@@ -17,15 +17,15 @@
  *
  */
 
-#include <tudat/Astrodynamics/ReferenceFrames/referenceAngles.h>
-#include <tudat/Astrodynamics/ReferenceFrames/referenceFrameTransformations.h>
-#include <tudat/Astrodynamics/BasicAstrodynamics/timeConversions.h>
+#include <Tudat/Astrodynamics/ReferenceFrames/referenceAngles.h>
+#include <Tudat/Astrodynamics/ReferenceFrames/referenceFrameTransformations.h>
+#include <Tudat/Astrodynamics/BasicAstrodynamics/timeConversions.h>
 
 #include <cmath>
 
-#include <tudat/Mathematics/BasicMathematics/basicMathematicsFunctions.h>
-#include <tudat/Mathematics/BasicMathematics/mathematicalConstants.h>
-#include <tudat/Astrodynamics/BasicAstrodynamics/timeConversions.h>
+#include <Tudat/Mathematics/BasicMathematics/basicMathematicsFunctions.h>
+#include <Tudat/Mathematics/BasicMathematics/mathematicalConstants.h>
+#include <Tudat/Astrodynamics/BasicAstrodynamics/timeConversions.h>
 
 namespace tudat
 {

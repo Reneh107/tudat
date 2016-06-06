@@ -41,14 +41,13 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/test/unit_test.hpp>
 
-#include "tudat/InputOutput/solarActivityData.h"
 #include "Tudat/InputOutput/solarActivityData.h"
 #include "Tudat/InputOutput/parsedDataVectorUtilities.h"
 #include "Tudat/InputOutput/parseSolarActivityData.h"
 #include "Tudat/InputOutput/extractSolarActivityData.h"
 #include "Tudat/InputOutput/basicInputOutput.h"
 
-#include <tudat/Basics/testMacros.h>
+#include <Tudat/Basics/testMacros.h>
 
 namespace tudat
 {
