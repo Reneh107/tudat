@@ -71,6 +71,7 @@
 #include "Tudat/Mathematics/Interpolators/oneDimensionalInterpolator.h"
 #include "Tudat/Mathematics/BasicMathematics/nearestNeighbourSearch.h"
 #include "Tudat/Mathematics/Interpolators/lookupScheme.h"
+#include "Tudat/Mathematics/BasicMathematics/mathematicalConstants.h"
 
 namespace tudat
 {
@@ -196,6 +197,15 @@ public:
 
         return interpolatedValue;
     }
+
+    //!
+    double interpolate( const Eigen::VectorXd&
+                                independentVariableValues )
+    {
+        std::cerr << "linear interpolator works with an std::vector" << std::endl;
+        return TUDAT_NAN;
+    }
+
 };
 
 //! Typedef for linear interpolator with (in)dependent variable = double.

@@ -61,6 +61,7 @@
 #include "Tudat/Mathematics/Interpolators/lookupScheme.h"
 #include "Tudat/Mathematics/Interpolators/interpolator.h"
 #include "Tudat/Mathematics/BasicMathematics/nearestNeighbourSearch.h"
+#include "Tudat/Mathematics/BasicMathematics/mathematicalConstants.h"
 
 namespace tudat
 {
@@ -158,6 +159,19 @@ public:
         // all 2^n grid edges.
         return performRecursiveInterpolationStep( 0, independentValuesToInterpolate,
                                                   interpolationIndices, nearestLowerIndices );
+    }
+
+    //! Interpolate.
+    /*!
+     * Interpolation function is not implemented for an input variable with type Eigen::VectorXd.
+     * \param targetIndependentVariableValue Target independent variable value at which point
+     * the interpolation is performed.
+     * \return Interpolated dependent variable value.
+     */
+    double interpolate( const Eigen::VectorXd& targetIndependentVariableValue )
+    {
+        std::cerr << "Multi-linear interpolator works with an std::vector" << std::endl;
+        return TUDAT_NAN;
     }
 
     //! Function to return the number of independent variables of the interpolation.

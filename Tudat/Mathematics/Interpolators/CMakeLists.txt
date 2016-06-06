@@ -47,6 +47,7 @@ set(INTERPOLATORS_HEADERS
   "${SRCROOT}${MATHEMATICSDIR}/Interpolators/lookupScheme.h"
   "${SRCROOT}${MATHEMATICSDIR}/Interpolators/oneDimensionalInterpolator.h"
   "${SRCROOT}${MATHEMATICSDIR}/Interpolators/multiLinearInterpolator.h"
+  "${SRCROOT}${MATHEMATICSDIR}/Interpolators/radialBasisFunctionInterpolator.h"
 )
 
 # Add static libraries.
@@ -70,4 +71,6 @@ add_executable(test_LagrangeInterpolator "${SRCROOT}${MATHEMATICSDIR}/Interpolat
 setup_custom_test_program(test_LagrangeInterpolator "${SRCROOT}${MATHEMATICSDIR}")
 target_link_libraries(test_LagrangeInterpolator tudat_input_output tudat_interpolators tudat_basic_mathematics ${Boost_LIBRARIES})
 
-
+add_executable(test_RadialBasisFunctionInterpolator "${SRCROOT}${MATHEMATICSDIR}/Interpolators/UnitTests/unitTestRadialBasisFunctionInterpolator.cpp")
+setup_custom_test_program(test_RadialBasisFunctionInterpolator "${SRCROOT}${MATHEMATICSDIR}")
+target_link_libraries(test_RadialBasisFunctionInterpolator tudat_input_output tudat_interpolators tudat_basic_mathematics ${Boost_LIBRARIES})

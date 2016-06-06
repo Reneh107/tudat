@@ -53,6 +53,7 @@
 
 #include "Tudat/Mathematics/Interpolators/oneDimensionalInterpolator.h"
 #include "Tudat/Mathematics/BasicMathematics/nearestNeighbourSearch.h"
+#include "Tudat/Mathematics/BasicMathematics/mathematicalConstants.h"
 
 namespace tudat
 {
@@ -278,6 +279,19 @@ public:
                 coefficientB_ * dependentValues_[ lowerEntry_ + 1 ] +
                 coefficientC_ * secondDerivativeOfCurve_[ lowerEntry_ ] +
                 coefficientD_ * secondDerivativeOfCurve_[ lowerEntry_ + 1 ];
+    }
+
+    //! Interpolate.
+    /*!
+     * Interpolation function is not implemented for an input variable with type Eigen::VectorXd.
+     * \param targetIndependentVariableValue Target independent variable value at which point
+     * the interpolation is performed.
+     * \return Interpolated dependent variable value.
+     */
+    double interpolate( const Eigen::VectorXd& targetIndependentVariableValue )
+    {
+        std::cerr << "Cubic spline interpolator works with an std::vector" << std::endl;
+        return TUDAT_NAN;
     }
 
 protected:

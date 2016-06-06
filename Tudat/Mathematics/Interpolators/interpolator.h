@@ -36,6 +36,7 @@
 #define TUDAT_INTERPOLATOR_H
 
 #include <vector>
+#include <Eigen/Core>
 
 namespace tudat
 {
@@ -72,6 +73,16 @@ public:
      */
     virtual DependentVariableType interpolate( const std::vector< IndependentVariableType >&
                                                independentVariableValues ) = 0;
+
+    //! Interpolate.
+    /*!
+     * This function performs the interpolation. It must be implemented in derived classes.
+     * \param independentVariableValues Eigen vector of values of independent variables at which
+     *          the value of the dependent variable is to be determined.
+     * \return Interpolated value of dependent variable.
+     */
+    virtual double interpolate( const Eigen::VectorXd&
+                                independentVariableValues ) = 0;
 
     //! Function to return the number of independent variables of the interpolation.
     /*!
