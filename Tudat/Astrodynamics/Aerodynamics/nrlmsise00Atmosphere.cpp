@@ -31,7 +31,7 @@
  */
 #include <iostream>
 #include "Tudat/Astrodynamics/Aerodynamics/nrlmsise00Atmosphere.h"
-#include "tudat/Mathematics/BasicMathematics/mathematicalConstants.h"
+#include "Tudat/Mathematics/BasicMathematics/mathematicalConstants.h"
 
 
 //! Tudat library namespace.

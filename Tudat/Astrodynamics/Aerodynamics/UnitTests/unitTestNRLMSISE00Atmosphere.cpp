@@ -57,7 +57,7 @@
 #include "Tudat/Astrodynamics/Aerodynamics/tabulatedAtmosphere.h"
 #include "Tudat/InputOutput/basicInputOutput.h"
 
-#include "tudat/Mathematics/BasicMathematics/mathematicalConstants.h"
+#include "Tudat/Mathematics/BasicMathematics/mathematicalConstants.h"
 
 
 namespace tudat
