@@ -73,4 +73,4 @@ target_link_libraries(test_LagrangeInterpolator tudat_input_output tudat_interpo
 
 add_executable(test_RadialBasisFunctionInterpolator "${SRCROOT}${MATHEMATICSDIR}/Interpolators/UnitTests/unitTestRadialBasisFunctionInterpolator.cpp")
 setup_custom_test_program(test_RadialBasisFunctionInterpolator "${SRCROOT}${MATHEMATICSDIR}")
-target_link_libraries(test_RadialBasisFunctionInterpolator tudat_input_output tudat_interpolators tudat_basic_mathematics ${Boost_LIBRARIES})
+target_link_libraries(test_RadialBasisFunctionInterpolator tudat_input_output tudat_interpolators tudat_basic_mathematics tudat_statistics ${Boost_LIBRARIES})

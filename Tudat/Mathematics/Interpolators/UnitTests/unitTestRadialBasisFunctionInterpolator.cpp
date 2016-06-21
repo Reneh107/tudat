@@ -56,6 +56,9 @@
 
 #include "Tudat/Mathematics/Interpolators/radialBasisFunctionInterpolator.h"
 
+#include "Tudat/Mathematics/Statistics/probabilityDistributions.h"
+#include "Tudat/Mathematics/Statistics/basicStatistics.h"
+
 #include <Eigen/Core>
 
 namespace tudat
@@ -71,6 +74,7 @@ double testFunction( Eigen::VectorXd x )
 }
 
 //! Test function2
+//! z = x(0)*sin^2( x(0) ) * exp( - x(1)^2 )
 double testFunction2( Eigen::VectorXd x )
 {
     return ( x(0)*std::pow( std::sin( x(0) ) , 2.0 ) * std::exp( - std::pow( x(1) , 2.0 ) ) );
@@ -178,106 +182,95 @@ BOOST_AUTO_TEST_CASE( test_inverse_multiquadric_radial_basis_function )
 }
 
 // Test implementation of radial basis function interpolator
-//BOOST_AUTO_TEST_CASE( test_radial_basis_function_interpolator_2d )
-//{
-//    std::cout << "Test 2D interpolation" << std::endl;
+BOOST_AUTO_TEST_CASE( test_radial_basis_function_interpolator_2d )
+{
+    using namespace tudat::interpolators;
 
-//    using namespace tudat::interpolators;
+    // Generate random independent values
+    std::vector< Eigen::VectorXd > independentValues(0);
+    Eigen::VectorXd randomSample(2);
 
-//    // Generate random independent values
-//    std::vector< Eigen::VectorXd > independentValues(0);
-//    Eigen::VectorXd randomSample(2);
+    int numberOfSamples = 4E2 ;
+    for( int i = 0 ; i < numberOfSamples ; i++ )
+    {
+        randomSample = Eigen::VectorXd::Random(2) * 4.0 ;
+        independentValues.push_back( randomSample );
+    }
 
-//    int numberOfSamples = 4E2 ;
-//    for( int i = 0 ; i < numberOfSamples ; i++ )
-//    {
-//        randomSample = Eigen::VectorXd::Random(2) * 20 ;
-//        independentValues.push_back( randomSample );
-//    }
+    // Generate dependentValues
+    std::vector< double > dependentValues(0);
+    for( int i = 0 ; i < numberOfSamples ; i++ )
+    {
+        dependentValues.push_back( testFunction( independentValues[i] ) );
+    }
 
-//    // Generate dependentValues
-//    std::vector< double > dependentValues(0);
-//    for( int i = 0 ; i < numberOfSamples ; i++ )
-//    {
-//        dependentValues.push_back( testFunction( independentValues[i] ) );
-//    }
+    // Construct interpolator
+    double scaleParameter = 1.0;
+    RadialBasisFunctionInterpolator interpolator(
+                independentValues , dependentValues , RadialBasisFunctionType::Multiquadric , scaleParameter );
 
-//    // Construct interpolator
-////    double scaleParameter = 25.0;
-//    double scaleParameter = 0.1;
+    BOOST_CHECK_CLOSE_FRACTION( scaleParameter , interpolator.getShapeParameter() , 1E-15 );
 
-//    RadialBasisFunctionInterpolator interpolator(
-//                independentValues , dependentValues , RadialBasisFunctionType::InverseMultiquadric , scaleParameter );
+    // Test if correct value at data sample
+    {
+        // Interpolate value
+        Eigen::VectorXd x(2);
+        x = independentValues[0];
 
-//    BOOST_CHECK_CLOSE_FRACTION( scaleParameter , interpolator.getShapeParameter() , 1E-15 );
-//    BOOST_CHECK_CLOSE_FRACTION( scaleParameter * 40.0 , interpolator.getScaledShapeParameter() , 2E-3 );
+        double computedValue = interpolator.interpolate( x );
+        double expectedValue = testFunction( x );
 
-//    // Test if correct value at data sample
-//    {
-//        // Interpolate value
-//        Eigen::VectorXd x(2);
-//        x = independentValues[0];
+        BOOST_CHECK_CLOSE_FRACTION( computedValue , expectedValue , 2E-10 );
+    }
 
-//        double computedValue = interpolator.interpolate( x );
-//        double expectedValue = testFunction( x );
+    // Test if correct value at data sample
+    {
+        // Interpolate value
+        Eigen::VectorXd x(2);
+        x = independentValues[30];
 
-//        BOOST_CHECK_SMALL( std::fabs( computedValue - expectedValue ) , 1E-12 );
-//    }
+        double computedValue = interpolator.interpolate( x );
+        double expectedValue = testFunction( x );
 
-//    // Test if correct value at data sample
-//    {
-//        // Interpolate value
-//        Eigen::VectorXd x(2);
-//        x = independentValues[30];
+        BOOST_CHECK_CLOSE_FRACTION( computedValue , expectedValue , 1E-9 );
+    }
 
-//        double computedValue = interpolator.interpolate( x );
-//        double expectedValue = testFunction( x );
+    // Test if correct value at data sample
+    {
+        // Interpolate value
+        Eigen::VectorXd x(2);
+        x = independentValues[39];
 
-//        BOOST_CHECK_SMALL( std::fabs( computedValue - expectedValue ) , 1E-12 );
-//    }
+        double computedValue = interpolator.interpolate( x );
+        double expectedValue = testFunction( x );
 
-//    // Test if correct value at data sample
-//    {
-//        // Interpolate value
-//        Eigen::VectorXd x(2);
-//        x = independentValues[39];
+        BOOST_CHECK_SMALL( std::fabs( computedValue - expectedValue ) , 1E-9 );
+    }
 
-//        double computedValue = interpolator.interpolate( x );
-//        double expectedValue = testFunction( x );
+    // Test if functions correctly interpolate
+    {
+        // Interpolate value
+        Eigen::VectorXd x(2);
+        x << 2.0 , 0.0 ;
 
-//        BOOST_CHECK_SMALL( std::fabs( computedValue - expectedValue ) , 1E-12 );
-//    }
+        double computedValue = interpolator.interpolate( x );
+        double expectedValue = testFunction( x );
 
-//    // Test if functions correctly interpolate
-//    {
-//        // Interpolate value
-//        Eigen::VectorXd x(2);
-//        x << 2.0 , 0.0 ;
+        BOOST_CHECK_CLOSE_FRACTION( computedValue , expectedValue , 5E-7 );
+    }
 
-//        double computedValue = interpolator.interpolate( x );
-//        double expectedValue = testFunction( x );
-//        std::cout << "computed " << computedValue << std::endl;
-//        std::cout << "expected " << expectedValue << std::endl;
+    // Test if functions correctly interpolate
+    {
+        // Interpolate value
+        Eigen::VectorXd x(2);
+        x = independentValues[39] * 0.9 ;
 
-//        BOOST_CHECK_SMALL( std::fabs( computedValue - expectedValue ) , 3E-4 );
-//    }
+        double computedValue = interpolator.interpolate( x );
+        double expectedValue = testFunction( x );
 
-//    // Test if functions correctly interpolate
-//    {
-//        // Interpolate value
-//        Eigen::VectorXd x(2);
-//        x = independentValues[39] * 0.9 ;
-
-//        double computedValue = interpolator.interpolate( x );
-//        double expectedValue = testFunction( x );
-//        std::cout << "computed " << computedValue << std::endl;
-//        std::cout << "expected " << expectedValue << std::endl;
-
-//        BOOST_CHECK_SMALL( std::fabs( computedValue - expectedValue ) , 2E-3 );
-//        BOOST_CHECK_CLOSE_FRACTION( computedValue , expectedValue , 1E-8 );
-//    }
-
-//}
+        BOOST_CHECK_CLOSE_FRACTION( computedValue , expectedValue , 5E-6 );
+    }
+}
 
 // Test implementation of radial basis function interpolator
 BOOST_AUTO_TEST_CASE( test_radial_basis_function_interpolator_2d_testfunction2 )
@@ -291,7 +284,7 @@ BOOST_AUTO_TEST_CASE( test_radial_basis_function_interpolator_2d_testfunction2 )
     int numberOfSamples = 4E2 ;
     for( int i = 0 ; i < numberOfSamples ; i++ )
     {
-        randomSample = Eigen::VectorXd::Random(2) * 20 ;
+        randomSample = Eigen::VectorXd::Random(2) * 3.0 ;
         independentValues.push_back( randomSample );
     }
 
@@ -303,7 +296,7 @@ BOOST_AUTO_TEST_CASE( test_radial_basis_function_interpolator_2d_testfunction2 )
     }
 
     // Construct interpolator
-    double scaleParameter = 0.1;
+    double scaleParameter = 0.8;
     RadialBasisFunctionInterpolator interpolator(
                 independentValues , dependentValues , RadialBasisFunctionType::InverseMultiquadric , scaleParameter );
 
@@ -316,7 +309,7 @@ BOOST_AUTO_TEST_CASE( test_radial_basis_function_interpolator_2d_testfunction2 )
         double computedValue = interpolator.interpolate( x );
         double expectedValue = testFunction2( x );
 
-        BOOST_CHECK_SMALL( std::fabs( computedValue - expectedValue ) , 1E-10 );
+        BOOST_CHECK_CLOSE_FRACTION( computedValue , expectedValue , 1E-10 );
     }
 
     // Test if correct value at data sample
@@ -328,7 +321,7 @@ BOOST_AUTO_TEST_CASE( test_radial_basis_function_interpolator_2d_testfunction2 )
         double computedValue = interpolator.interpolate( x );
         double expectedValue = testFunction2( x );
 
-        BOOST_CHECK_SMALL( std::fabs( computedValue - expectedValue ) , 1E-10 );
+        BOOST_CHECK_CLOSE_FRACTION( computedValue , expectedValue , 2E-8 );
     }
 
     // Test if correct value at data sample
@@ -340,21 +333,19 @@ BOOST_AUTO_TEST_CASE( test_radial_basis_function_interpolator_2d_testfunction2 )
         double computedValue = interpolator.interpolate( x );
         double expectedValue = testFunction2( x );
 
-        BOOST_CHECK_SMALL( std::fabs( computedValue - expectedValue ) , 1E-10 );
+        BOOST_CHECK_CLOSE_FRACTION( computedValue , expectedValue , 5E-10 );
     }
 
     // Test if functions correctly interpolate
     {
         // Interpolate value
         Eigen::VectorXd x(2);
-        x << 2.0 , 0.0 ;
+        x << 1.0 , 0.0 ;
 
         double computedValue = interpolator.interpolate( x );
         double expectedValue = testFunction2( x );
-        std::cout << "computed " << computedValue << std::endl;
-        std::cout << "expected " << expectedValue << std::endl;
 
-        BOOST_CHECK_SMALL( std::fabs( computedValue - expectedValue ) , 3E-4 );
+        BOOST_CHECK_CLOSE_FRACTION( computedValue , expectedValue , 1E-4 );
     }
 
     // Test if functions correctly interpolate
@@ -365,14 +356,354 @@ BOOST_AUTO_TEST_CASE( test_radial_basis_function_interpolator_2d_testfunction2 )
 
         double computedValue = interpolator.interpolate( x );
         double expectedValue = testFunction2( x );
-//        std::cout << "computed " << computedValue << std::endl;
-//        std::cout << "expected " << expectedValue << std::endl;
 
-        BOOST_CHECK_SMALL( std::fabs( computedValue - expectedValue ) , 5E-3 );
+        BOOST_CHECK_CLOSE_FRACTION( computedValue , expectedValue , 1E-3 );
+    }
+}
+
+// Test implementation of radial basis function (RBF) interpolator with 2D gaussian distribution test function
+// and assymetrical gaussian radial basis function
+// This test shows that the assymetrical gaussian RBF can be used for assymetric data
+BOOST_AUTO_TEST_CASE( test_radial_basis_function_interpolator_2d_gaussianDistribution )
+{
+    using namespace tudat::interpolators;
+
+    Eigen::VectorXd mean(2);
+    mean << 1.0 , -100.0;
+
+    Eigen::MatrixXd covariance(2,2);
+    covariance << 1.0 , 0.0 ,
+                  0.0 , 40000.0 ;
+
+    tudat::statistics::GaussianDistributionXd gaussianDistribution( mean , covariance );
+
+    // Generate random independent values
+    std::vector< Eigen::VectorXd > independentValues(0);
+    Eigen::VectorXd randomSample(2);
+
+    int numberOfSamples = 1E3 ;
+    for( int i = 0 ; i < numberOfSamples ; i++ )
+    {
+        randomSample = Eigen::VectorXd::Random(2) ;
+        randomSample(0) = randomSample(0) * 5.0 * std::sqrt( covariance(0,0) ) + mean(0);
+        randomSample(1) = randomSample(1) * 5.0 * std::sqrt( covariance(1,1) ) + mean(1);
+        independentValues.push_back( randomSample );
+    }
+
+    // Generate dependentValues
+    std::vector< double > dependentValues(0);
+    for( int i = 0 ; i < numberOfSamples ; i++ )
+    {
+        dependentValues.push_back( gaussianDistribution.getProbabilityDensity( independentValues[i] ) );
+    }
+
+    // Construct interpolator
+    double scaleParameter = 5.0; // larger scale parameter , more peaky distribution
+    RadialBasisFunctionInterpolator interpolator(
+                independentValues , dependentValues , RadialBasisFunctionType::AssymGaussian , scaleParameter );
+
+    // Test if correct value at data sample
+    {
+        // Interpolate value
+        Eigen::VectorXd x(2);
+        x = independentValues[0];
+
+        double computedValue = interpolator.interpolate( x );
+        double expectedValue = gaussianDistribution.getProbabilityDensity( x );
+
+        BOOST_CHECK_CLOSE_FRACTION( computedValue , expectedValue , 4E-6 );
+    }
+
+    // Test if correct value at data sample
+    {
+        // Interpolate value
+        Eigen::VectorXd x(2);
+        x = independentValues[40];
+
+        double computedValue = interpolator.interpolate( x );
+        double expectedValue = gaussianDistribution.getProbabilityDensity( x );
+
+        BOOST_CHECK_CLOSE_FRACTION( computedValue , expectedValue , 2E-9 );
+    }
+
+    // Test if correctly interpolated
+    {
+        // Interpolate value
+        Eigen::VectorXd x(2);
+        x << 3.0 , -50.0 ;
+
+        double computedValue = interpolator.interpolate( x );
+        double expectedValue = gaussianDistribution.getProbabilityDensity( x );
+
+        BOOST_CHECK_CLOSE_FRACTION( computedValue , expectedValue , 1E-10 );
+    }
+
+    // Test if correctly interpolated
+    {
+        // Interpolate value
+        Eigen::VectorXd x(2);
+        x << 5.0 , 0.0 ;
+
+        double computedValue = interpolator.interpolate( x );
+        double expectedValue = gaussianDistribution.getProbabilityDensity( x );
+
+        BOOST_CHECK_CLOSE_FRACTION( computedValue , expectedValue , 1E-10 );
+    }
+}
+
+// Test implementation of radial basis function (RBF) interpolator with 2D gaussian distribution test function
+// and (symetrical) gaussian radial basis function
+// This test shows that assymetrical data cannot be interpolated using a radially symmetric RBF
+BOOST_AUTO_TEST_CASE( test_radial_basis_function_interpolator_2d_gaussianDistribution_Symmetrical )
+{
+    using namespace tudat::interpolators;
+
+    Eigen::VectorXd mean(2);
+    mean << 1.0 , -1000.0;
+
+    Eigen::MatrixXd covariance(2,2);
+    covariance << 1.0 , 0.0 ,
+                  0.0 , 4.0E6 ;
+
+    tudat::statistics::GaussianDistributionXd gaussianDistribution( mean , covariance );
+
+    // Generate random independent values
+    std::vector< Eigen::VectorXd > independentValues(0);
+    Eigen::VectorXd randomSample(2);
+
+    int numberOfSamples = 1E3 ;
+    for( int i = 0 ; i < numberOfSamples ; i++ )
+    {
+        randomSample = Eigen::VectorXd::Random(2) ;
+        randomSample(0) = randomSample(0) * 5.0 * std::sqrt( covariance(0,0) ) + mean(0);
+        randomSample(1) = randomSample(1) * 5.0 * std::sqrt( covariance(1,1) ) + mean(1);
+        independentValues.push_back( randomSample );
+    }
+
+    // Generate dependentValues
+    std::vector< double > dependentValues(0);
+    for( int i = 0 ; i < numberOfSamples ; i++ )
+    {
+        dependentValues.push_back( gaussianDistribution.getProbabilityDensity( independentValues[i] ) );
+    }
+
+    // Construct interpolator
+    double scaleParameter = 0.000005;
+    RadialBasisFunctionInterpolator interpolator(
+                independentValues , dependentValues , RadialBasisFunctionType::Gaussian , scaleParameter );
+
+    // Test if correct value at data sample
+    {
+        // Interpolate value
+        Eigen::VectorXd x(2);
+        x = independentValues[0];
+
+        double computedValue = interpolator.interpolate( x );
+        double expectedValue = gaussianDistribution.getProbabilityDensity( x );
+
+        BOOST_CHECK_CLOSE_FRACTION( computedValue , expectedValue , 1E-10 );
+    }
+
+    // Test if correct value at data sample
+    {
+        // Interpolate value
+        Eigen::VectorXd x(2);
+        x = independentValues[40];
+
+        double computedValue = interpolator.interpolate( x );
+        double expectedValue = gaussianDistribution.getProbabilityDensity( x );
+
+        BOOST_CHECK_CLOSE_FRACTION( computedValue , expectedValue , 1E-10 );
+    }
+
+    // Test if correctly interpolated
+    {
+        // Interpolate value
+        Eigen::VectorXd x(2);
+        x << 3.0 , -500.0 ;
+
+        double computedValue = interpolator.interpolate( x );
+        double expectedValue = gaussianDistribution.getProbabilityDensity( x );
+
+        BOOST_CHECK_CLOSE_FRACTION( computedValue , expectedValue , 5.0 );
+    }
+
+    // Test if correctly interpolated
+    {
+        // Interpolate value
+        Eigen::VectorXd x(2);
+        x << 2.0 , -900.0 ;
+
+        double computedValue = interpolator.interpolate( x );
+        double expectedValue = gaussianDistribution.getProbabilityDensity( x );
+
+        BOOST_CHECK_CLOSE_FRACTION( computedValue , expectedValue , 600.0);
+    }
+
+    // Test if correctly interpolated
+    {
+        // Interpolate value
+        Eigen::VectorXd x(2);
+        x << 5.0 , 0.0 ;
+
+        double computedValue = interpolator.interpolate( x );
+        double expectedValue = gaussianDistribution.getProbabilityDensity( x );
+
+        BOOST_CHECK_CLOSE_FRACTION( computedValue , expectedValue , 600.0 );
+    }
+}
+
+// Test implementation of radial basis function interpolator with 2D gaussian distribution test function
+// and (symetrical) gaussian radial basis function with symmetric data
+// Test shows that Symmetric gaussian radial basis function can be used with symmetric data.
+BOOST_AUTO_TEST_CASE( test_radial_basis_function_interpolator_2d_gaussianDistribution_Symmetrical2 )
+{
+    using namespace tudat::interpolators;
+
+    Eigen::VectorXd mean(2);
+    mean << 1.0 , -2.0;
+
+    Eigen::MatrixXd covariance(2,2);
+    covariance << 1.0 , 0.0 ,
+                  0.0 , 4.0 ;
+
+    tudat::statistics::GaussianDistributionXd gaussianDistribution( mean , covariance );
+
+    // Generate random independent values
+    std::vector< Eigen::VectorXd > independentValues(0);
+    Eigen::VectorXd randomSample(2);
+
+    int numberOfSamples = 1E3 ;
+    for( int i = 0 ; i < numberOfSamples ; i++ )
+    {
+        randomSample = Eigen::VectorXd::Random(2) ;
+        randomSample(0) = randomSample(0) * 5.0 * std::sqrt( covariance(0,0) ) + mean(0);
+        randomSample(1) = randomSample(1) * 5.0 * std::sqrt( covariance(1,1) ) + mean(1);
+        independentValues.push_back( randomSample );
+    }
+
+    // Generate dependentValues
+    std::vector< double > dependentValues(0);
+    for( int i = 0 ; i < numberOfSamples ; i++ )
+    {
+        dependentValues.push_back( gaussianDistribution.getProbabilityDensity( independentValues[i] ) );
+    }
+
+    // Construct interpolator
+    double scaleParameter = 0.1;
+    RadialBasisFunctionInterpolator interpolator(
+                independentValues , dependentValues , RadialBasisFunctionType::Gaussian , scaleParameter );
+
+    // Test if correct value at data sample
+    {
+        // Interpolate value
+        Eigen::VectorXd x(2);
+        x = independentValues[0];
+
+        double computedValue = interpolator.interpolate( x );
+        double expectedValue = gaussianDistribution.getProbabilityDensity( x );
+
+        BOOST_CHECK_CLOSE_FRACTION( computedValue , expectedValue , 5E-9 );
+    }
+
+    // Test if correct value at data sample
+    {
+        // Interpolate value
+        Eigen::VectorXd x(2);
+        x = independentValues[40];
+
+        double computedValue = interpolator.interpolate( x );
+        double expectedValue = gaussianDistribution.getProbabilityDensity( x );
+
+        BOOST_CHECK_CLOSE_FRACTION( computedValue , expectedValue , 1E-10 );
+    }
+
+    // Test if correctly interpolated
+    {
+        // Interpolate value
+        Eigen::VectorXd x(2);
+        x << 2.0 , -3.0 ;
+
+        double computedValue = interpolator.interpolate( x );
+        double expectedValue = gaussianDistribution.getProbabilityDensity( x );
+
+        BOOST_CHECK_CLOSE_FRACTION( computedValue , expectedValue , 1E-10 );
+    }
+
+    // Test if correctly interpolated
+    {
+        // Interpolate value
+        Eigen::VectorXd x(2);
+        x << 1.0 , -2.0 ;
+
+        double computedValue = interpolator.interpolate( x );
+        double expectedValue = gaussianDistribution.getProbabilityDensity( x );
+
+        BOOST_CHECK_CLOSE_FRACTION( computedValue , expectedValue , 1E-10 );
+    }
+
+    // Test if correctly interpolated
+    {
+        // Interpolate value
+        Eigen::VectorXd x(2);
+        x << 5.0 , 0.0 ;
+
+        double computedValue = interpolator.interpolate( x );
+        double expectedValue = gaussianDistribution.getProbabilityDensity( x );
+
+        BOOST_CHECK_CLOSE_FRACTION( computedValue , expectedValue , 3E-8 );
     }
 }
 
 BOOST_AUTO_TEST_SUITE_END( )
+
+// Test variance computation and scaling
+BOOST_AUTO_TEST_CASE( test_variance_scaling )
+{
+    using namespace tudat::interpolators;
+
+    // Generate random independent values
+    std::vector< Eigen::VectorXd > independentValues(0);
+    Eigen::VectorXd randomSample(2);
+
+    std::vector< double > independentValue1(0);
+    std::vector< double > independentValue2(0);
+
+    int numberOfSamples = 4E2 ;
+    for( int i = 0 ; i < numberOfSamples ; i++ )
+    {
+        randomSample = Eigen::VectorXd::Random(2) * 4.0 ;
+        independentValue1.push_back( randomSample(0) );
+        independentValue2.push_back( randomSample(1) );
+        independentValues.push_back( randomSample );
+    }
+
+    // Generate dependentValues
+    std::vector< double > dependentValues(0);
+    for( int i = 0 ; i < numberOfSamples ; i++ )
+    {
+        dependentValues.push_back( testFunction( independentValues[i] ) );
+    }
+
+    // Construct interpolator
+    double scaleParameter = 2.0;
+    RadialBasisFunctionInterpolator interpolator(
+                independentValues , dependentValues , RadialBasisFunctionType::Multiquadric , scaleParameter );
+
+    double sampleVariance1 = tudat::statistics::computeSampleVariance( independentValue1 );
+    double sampleVariance2 = tudat::statistics::computeSampleVariance( independentValue2 );
+
+    Eigen::VectorXd computedVariance = interpolator.getVarianceOfData();
+    Eigen::VectorXd computedStd = interpolator.getStandardDeviationOfData();
+
+    BOOST_CHECK_CLOSE_FRACTION( sampleVariance1 , computedVariance(0) , 1E-13 );
+    BOOST_CHECK_CLOSE_FRACTION( sampleVariance2 , computedVariance(1) , 1E-13 );
+    BOOST_CHECK_CLOSE_FRACTION( std::sqrt( sampleVariance1 ) , computedStd(0) , 1E-13 );
+    BOOST_CHECK_CLOSE_FRACTION( std::sqrt( sampleVariance2 ) , computedStd(1) , 1E-13 );
+
+    double scaledShapeParameter = interpolator.getScaledShapeParameter();
+    BOOST_CHECK_CLOSE_FRACTION( std::sqrt( sampleVariance2 ) * scaleParameter , scaledShapeParameter , 1E-13 );
+}
 
 } // namespace unit_tests
 } // namespace tudat

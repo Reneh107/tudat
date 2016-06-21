@@ -48,6 +48,7 @@
 
 #include "Tudat/Mathematics/Interpolators/interpolator.h"
 #include "Tudat/Mathematics/BasicMathematics/mathematicalConstants.h"
+#include "Tudat/Mathematics/Statistics/basicStatistics.h"
 
 namespace tudat
 {
@@ -58,7 +59,8 @@ namespace interpolators
 enum RadialBasisFunctionType{
     Gaussian = 0,
     Multiquadric = 1,
-    InverseMultiquadric = 2
+    InverseMultiquadric = 2,
+    AssymGaussian = 3
 };
 
 //! Class that implements a radial basis function
@@ -123,6 +125,42 @@ private:
 
     //! Shape parameter of radial basis function
     double shapeParameter_;
+
+};
+
+//! Class that implements a radial basis function
+/*!
+ * ..
+ *
+ * Note that the types (i.e. double, float) of all independent variables must be the same.
+ *
+ */
+class AssymetricGaussianRadialBasisFunction: public RadialBasisFunction
+{
+public:
+
+    AssymetricGaussianRadialBasisFunction( double shapeParameter , Eigen::VectorXd standardDeviationOfData )
+    {
+        shapeParameter_ = shapeParameter;
+        standardDeviationOfData_ = standardDeviationOfData;
+    }
+
+    double evaluate( const Eigen::VectorXd& independentVariable, const Eigen::VectorXd& location )
+    {
+        Eigen::VectorXd difference = independentVariable - location ;
+        double radius = (difference.cwiseQuotient( standardDeviationOfData_ ) ).norm();
+        return std::exp( - shapeParameter_ * std::pow( radius , 2.0 ) );
+    }
+
+protected:
+
+private:
+
+    //! Shape parameter of radial basis function
+    double shapeParameter_;
+
+    //! Variance of to be interpolated data
+    Eigen::VectorXd standardDeviationOfData_;
 
 };
 
@@ -220,23 +258,10 @@ public:
         numberOfDimension_ = static_cast< int >( independentValues_[0].rows() );
         numberOfDatapoints_ = static_cast< int >( independentValues_.size() );
 
-        // Find minimum and maximum independent values.
-        minimumIndependentValue_ = independentValues_[0].minCoeff();
-        maximumIndependentValue_ = independentValues_[0].maxCoeff();
-        for( int i = 1 ; i < numberOfDatapoints_ ; i++ )
-        {
-            if( minimumIndependentValue_ > independentValues_[i].minCoeff() )
-            {
-                minimumIndependentValue_ = independentValues_[i].minCoeff();
-            }
-            if( maximumIndependentValue_ < independentValues_[i].maxCoeff() )
-            {
-                maximumIndependentValue_ = independentValues_[i].maxCoeff();
-            }
-        }
+        calculateVariance();
 
-        // SCALE multiply with max - min
-        shapeParameterScaled_ = shapeParameter_ * ( maximumIndependentValue_ - minimumIndependentValue_ ) ;
+        // Scale shape parameter using standard deviation of independent variables
+        shapeParameterScaled_ = shapeParameter_ * ( standardDeviationOfData_.maxCoeff() );
 
         // Construct radial basis function
         if( radialBasisFunctionType_ == RadialBasisFunctionType::Gaussian )
@@ -250,8 +275,15 @@ public:
         }
         else if( radialBasisFunctionType_ == RadialBasisFunctionType::InverseMultiquadric )
         {
-            radialBasisFunction_ = boost::make_shared< InverseMultiQuadricRadialBasisFunction >( shapeParameterScaled_ );
+            radialBasisFunction_ = boost::make_shared< InverseMultiQuadricRadialBasisFunction >(
+                        shapeParameterScaled_ );
         }
+        else if( radialBasisFunctionType_ == RadialBasisFunctionType::AssymGaussian )
+        {
+            radialBasisFunction_ = boost::make_shared< AssymetricGaussianRadialBasisFunction >(
+                        shapeParameter_ , standardDeviationOfData_ );
+        }
+
         generateCoefficients();
     }
 
@@ -316,6 +348,16 @@ public:
         return shapeParameter_;
     }
 
+    Eigen::VectorXd getVarianceOfData()
+    {
+        return varianceOfData_;
+    }
+
+    Eigen::VectorXd getStandardDeviationOfData()
+    {
+        return standardDeviationOfData_;
+    }
+
 private:
 
     //! Generate the coefficients of the radial basis functions.
@@ -346,8 +388,35 @@ private:
         coefficients_ = matrixA.colPivHouseholderQr( ).solve( vectorY ) ;
     }
 
+    void calculateVariance( )
+    {
+        // Calculate mean
+        Eigen::VectorXd mean = Eigen::VectorXd::Zero( numberOfDimension_ );
+        for( int i = 0 ; i < numberOfDatapoints_ ; i++ )
+        {
+            mean = mean + independentValues_[i];
+        }
+        mean = mean / ( static_cast<double>( numberOfDatapoints_ ) );
+
+        // Calculate standard deviation
+        varianceOfData_ = Eigen::VectorXd::Zero( numberOfDimension_ );
+        for( int i = 0 ; i < numberOfDatapoints_ ; i++ )
+        {
+            varianceOfData_ = varianceOfData_ + ( (independentValues_[i] - mean).cwiseAbs2() );
+        }
+        varianceOfData_ = varianceOfData_ / static_cast< double >( independentValues_.size( ) - 1 );
+
+        standardDeviationOfData_ = varianceOfData_.cwiseSqrt();
+    }
+
     //! Vector of Eigen vectors containing independent variables.
     std::vector< Eigen::VectorXd > independentValues_;
+
+    //! Variance vector of independent values.
+    Eigen::VectorXd varianceOfData_;
+
+    //! Standard deviation of independent values.
+    Eigen::VectorXd standardDeviationOfData_;
 
     //! Vector of dependent data.
     std::vector< double > dependentData_;
