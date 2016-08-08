@@ -51,7 +51,7 @@
 #include "Tudat/InputOutput/solarActivityData.h"
 #include "Tudat/InputOutput/basicInputOutput.h"
 
-#include <tudat/Basics/testMacros.h>
+#include <Tudat/Basics/testMacros.h>
 
 namespace tudat
 {
