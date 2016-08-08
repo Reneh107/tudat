@@ -80,7 +80,7 @@ void NRLMSISE00Atmosphere::computeProperties(double altitude, double longitude,
     pressure_ = TUDAT_NAN;
 
     // Get number densities
-    numberDensities_.resize(7);
+    numberDensities_.resize(8);
     numberDensities_[0] = output_.d[0] * 1.0E6 ; // HE NUMBER DENSITY    (M-3)
     numberDensities_[1] = output_.d[1] * 1.0E6 ; // O NUMBER DENSITY     (M-3)
     numberDensities_[2] = output_.d[2] * 1.0E6 ; // N2 NUMBER DENSITY    (M-3)
