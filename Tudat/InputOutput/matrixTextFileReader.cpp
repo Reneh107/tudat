@@ -162,5 +162,107 @@ Eigen::MatrixXd readMatrixFromFile( const std::string& relativePath, const std::
     return dataMatrix_;
 }
 
+std::vector< Eigen::VectorXd > readVectorsFromFile( const std::string& relativePath,
+                                    const std::string& separators,
+                                    const std::string& skipLinesCharacter )
+{
+    // Open input and output.
+    std::fstream file( relativePath.c_str( ), std::ios::in );
+    if ( file.fail( ) )
+    {
+        boost::throw_exception(
+                    std::runtime_error(
+                                    boost::str(
+                            boost::format( "Data file '%s' could not be opened." )
+                            % relativePath.c_str( ) ) ) );
+    }
+
+    std::stringstream filteredStream( std::ios::in | std::ios::out );
+    {
+        // Filter the file stream. This needs to be in its own scope, because filtering_stream::
+        // flush( ) does not work if the underlying end point is a stringstream, so the flush has
+        // to be forced by letting the filtering_stream go out of scope.
+        boost::iostreams::filtering_ostream filterProcessor;
+        for ( unsigned int i = 0; i < skipLinesCharacter.size( ); i++ )
+        {
+            // Remove all comments from the stream.
+            filterProcessor.push( input_output::stream_filters::RemoveComment(
+                                      skipLinesCharacter[ i ], true ) );
+        }
+
+        // Add the output to the filter chain.
+        filterProcessor.push( filteredStream );
+
+        // Copy the input to the filter.
+        boost::iostreams::copy( file, filterProcessor );
+    }
+
+    // Seek stream back to start.
+    filteredStream.seekg( 0, std::ios::beg );
+
+    // Read the filtered stream into lines.
+    std::vector< std::string > lines_;
+    while ( !filteredStream.eof( ) )
+    {
+        std::string line_;
+        getline( filteredStream, line_ );
+        if ( !line_.empty( ) )
+        {
+            boost::trim_all( line_ );
+            lines_.push_back( line_ );
+        }
+    }
+
+    // If there are no lines, return an empty matrix.
+    if ( lines_.empty( ) )
+    {
+        return std::vector< Eigen::VectorXd >(0);
+    }
+
+    const std::string realSeparators = std::string( separators ) + " ";
+
+    // Determine the number of columns from.
+    std::vector< std::string > lineSplit_;
+    boost::algorithm::split( lineSplit_, lines_[ 0 ], boost::is_any_of( realSeparators ),
+                             boost::algorithm::token_compress_on );
+    const unsigned int numberOfColumns = lineSplit_.size( );
+
+    // Initialize the vector with sizes obtained from the number of lines and the entries in the
+    // first line.
+    std::vector< Eigen::VectorXd > dataVector_( lines_.size() );
+    Eigen::VectorXd singleVector_( numberOfColumns );
+    for ( unsigned int rowIndex = 0; rowIndex < dataVector_.size(); rowIndex++ )
+    {
+        lineSplit_.clear( );
+
+        // Read current line and split into separate entries.
+        boost::algorithm::split( lineSplit_, lines_[ rowIndex ],
+                                 boost::is_any_of( realSeparators ),
+                                 boost::algorithm::token_compress_on );
+
+        // Check if number of column entries in line matches the number of columns in the matrix.
+        // If not, throw a runtime error.
+        if ( lineSplit_.size( ) != numberOfColumns )
+        {
+            boost::throw_exception(
+                        std::runtime_error(
+                            boost::str(
+                                boost::format(
+                                    "Number of columns in row %1% is %2%; should be %3%." )
+                                % rowIndex % lineSplit_.size( ) % numberOfColumns ) ) );
+        }
+
+        // Put single line entries into matrix as doubles.
+        for ( unsigned int columnIndex = 0; columnIndex < numberOfColumns; columnIndex++ )
+        {
+            boost::trim( lineSplit_.at( columnIndex ) );
+            singleVector_( columnIndex ) = boost::lexical_cast< double >( lineSplit_.at( columnIndex ) );
+        }
+        dataVector_[ rowIndex ] = singleVector_;
+    }
+
+    return dataVector_;
+}
+
 } // namespace input_output
 } // namespace tudat

@@ -60,6 +60,10 @@ Eigen::MatrixXd readMatrixFromFile( const std::string& relativePath,
                                     const std::string& separators = "\t ;,",
                                     const std::string& skipLinesCharacter = "%" );
 
+std::vector< Eigen::VectorXd > readVectorsFromFile( const std::string& relativePath,
+                                    const std::string& separators = "\t ;,",
+                                    const std::string& skipLinesCharacter = "%" );
+
 } // namespace input_output
 } // namespace tudat
 
