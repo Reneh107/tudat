@@ -471,6 +471,50 @@ BOOST_AUTO_TEST_CASE( testTrajectoryToLocalVerticalFrameTransformations )
             }
         }
     }
+
+//    // Test local vertical to trajectory frame quaternion using velocities
+//    {
+//        double downVelocity = 100.0;
+//        double eastVelocity = 3000.0;
+//        double northVelocity = 2300.0;
+//        double velocity = std::sqrt( northVelocity * northVelocity + eastVelocity * eastVelocity + downVelocity * downVelocity );
+
+//        double flightPathAngle = std::asin( - downVelocity / velocity );
+//        double headingAngle = std::atan2( eastVelocity , northVelocity );
+
+//        Eigen::Quaterniond referenceQuaternion =
+//                reference_frames::getLocalVerticalFrameToTrajectoryTransformationQuaternion( flightPathAngle , headingAngle );
+
+//        Eigen::Quaterniond computedQuaternion =
+//                reference_frames::getLocalVerticalFrameToTrajectoryTransformationQuaternion( northVelocity , eastVelocity , downVelocity );
+
+//        BOOST_CHECK_CLOSE_FRACTION( computedQuaternion.w() , referenceQuaternion.w() , 1E-14 );
+//        BOOST_CHECK_CLOSE_FRACTION( (computedQuaternion.vec())(0) , (referenceQuaternion.vec())(0) , 1E-14 );
+//        BOOST_CHECK_CLOSE_FRACTION( (computedQuaternion.vec())(1) , (referenceQuaternion.vec())(1) , 1E-14 );
+//        BOOST_CHECK_CLOSE_FRACTION( (computedQuaternion.vec())(2) , (referenceQuaternion.vec())(2) , 1E-14 );
+//    }
+
+//    // Test local vertical to trajectory frame quaternion using velocities
+//    {
+//        double downVelocity = -500.0;
+//        double eastVelocity = -2000.0;
+//        double northVelocity = 4300.0;
+//        double velocity = std::sqrt( northVelocity * northVelocity + eastVelocity * eastVelocity + downVelocity * downVelocity );
+
+//        double flightPathAngle = std::asin( - downVelocity / velocity );
+//        double headingAngle = std::atan2( eastVelocity , northVelocity );
+
+//        Eigen::Quaterniond referenceQuaternion =
+//                reference_frames::getLocalVerticalFrameToTrajectoryTransformationQuaternion( flightPathAngle , headingAngle );
+
+//        Eigen::Quaterniond computedQuaternion =
+//                reference_frames::getLocalVerticalFrameToTrajectoryTransformationQuaternion( northVelocity , eastVelocity , downVelocity );
+
+//        BOOST_CHECK_CLOSE_FRACTION( computedQuaternion.w() , referenceQuaternion.w() , 1E-14 );
+//        BOOST_CHECK_CLOSE_FRACTION( (computedQuaternion.vec())(0) , (referenceQuaternion.vec())(0) , 1E-14 );
+//        BOOST_CHECK_CLOSE_FRACTION( (computedQuaternion.vec())(1) , (referenceQuaternion.vec())(1) , 1E-14 );
+//        BOOST_CHECK_CLOSE_FRACTION( (computedQuaternion.vec())(2) , (referenceQuaternion.vec())(2) , 1E-14 );
+//    }
 }
 
 BOOST_AUTO_TEST_CASE( testTrajectoryToAerodynamicFrameTransformations )
