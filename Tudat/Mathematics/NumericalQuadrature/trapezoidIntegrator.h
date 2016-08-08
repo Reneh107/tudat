@@ -36,6 +36,7 @@
 #define TUDAT_TRAPEZOIDAL_INTEGRATOR_H
 
 #include <vector>
+#include <boost/shared_ptr.hpp>
 #include <Eigen/Core>
 #include <Tudat/Mathematics/NumericalQuadrature/numericalQuadrature.h>
 
@@ -62,6 +63,9 @@ public:
         dependentVariables_ = dependentVariables;
     }
 
+    //! Constructor
+    TrapezoidNumericalIntegrator( ){ }
+
     //! Integrate.
     /*!
      * This function performs the integration.
@@ -70,14 +74,33 @@ public:
      */
     VariableType integrate(  )
     {
+        return integrate( independentVariables_ , dependentVariables_ );
+    }
+
+    //! Integrate.
+    /*!
+     * This function performs the integration.
+     * Source: Burden & Faires
+     * \return Integral of the data.
+     */
+    VariableType integrate( const std::vector< VariableType >& independentVariables,
+                            const std::vector< VariableType >& dependentVariables )
+    {
         VariableType integral = 0;
         VariableType h;
-        for( unsigned int i = 0 ; i < independentVariables_.size() - 1 ; i++ )
+        for( unsigned int i = 0 ; i < independentVariables.size() - 1 ; i++ )
         {
-            h = independentVariables_[i+1] - independentVariables_[i];
-            integral += h * ( dependentVariables_[i+1] + dependentVariables_[i] ) / ( 2.0 ) ;
+            h = independentVariables[i+1] - independentVariables[i];
+            integral += h * ( dependentVariables[i+1] + dependentVariables[i] ) / ( 2.0 ) ;
         }
         return integral;
+    }
+
+    void resetData( const std::vector< VariableType >& independentVariables,
+                const std::vector< VariableType >& dependentVariables)
+    {
+        independentVariables_ = independentVariables;
+        dependentVariables_ = dependentVariables;
     }
 
 protected:
@@ -91,6 +114,8 @@ private:
     std::vector< VariableType > dependentVariables_;
 
 };
+
+typedef boost::shared_ptr< TrapezoidNumericalIntegrator<double> > TrapezoidNumericalIntegratorPointerd;
 
 } // namespace numerical_quadrature
 } // namespace tudat
