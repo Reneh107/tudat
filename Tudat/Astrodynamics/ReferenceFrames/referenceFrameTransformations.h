@@ -275,6 +275,10 @@ Eigen::Matrix3d getLocalVerticalFrameToTrajectoryTransformationMatrix(
 Eigen::Quaterniond getLocalVerticalFrameToTrajectoryTransformationQuaternion(
         const double flightPathAngle, const double headingAngle );
 
+//! Get transformation quaternion from V- to the TA/TG-frame.
+//Eigen::Quaterniond getLocalVerticalFrameToTrajectoryTransformationQuaternion(
+//        const double northVelocity, const double eastVelocity, const double downVelocity );
+
 //! Get transformation matrix from the TA- to the AA-frame.
 /*!
  * Returns the transformation matrix from the airspeed-based trajectory (TA) to the airspeed-based

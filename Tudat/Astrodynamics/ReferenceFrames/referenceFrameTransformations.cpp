@@ -239,6 +239,33 @@ Eigen::Quaterniond getTrajectoryToLocalVerticalFrameTransformationQuaternion(
     return Eigen::Quaterniond( rotationAroundZaxis * rotationAroundYaxis );
 }
 
+//! Get transformation quaternion from V- to the TA/TG-frame.
+//Eigen::Quaterniond getLocalVerticalFrameToTrajectoryTransformationQuaternion(
+//        const double northVelocity, const double eastVelocity, const double downVelocity )
+//{
+//    Eigen::Quaterniond transformationQuaternion;
+//    double velocity = std::sqrt( northVelocity * northVelocity + eastVelocity * eastVelocity + downVelocity * downVelocity );
+
+//    // Vector
+//    Eigen::Vector3d quaternionVector;
+//    quaternionVector(0) = downVelocity * eastVelocity
+//            / ( std::sqrt( eastVelocity * eastVelocity + northVelocity * northVelocity ) * velocity );
+
+//    quaternionVector(1) = - downVelocity * northVelocity
+//            / ( std::sqrt( eastVelocity * eastVelocity + northVelocity * northVelocity ) * velocity );
+
+//    quaternionVector(2) = std::sqrt( velocity * velocity - downVelocity*downVelocity ) * eastVelocity
+//            / ( std::sqrt( eastVelocity * eastVelocity + northVelocity * northVelocity ) * velocity );
+
+//    transformationQuaternion.vec() = quaternionVector;
+
+//    // Scalar
+//    transformationQuaternion.w() = std::sqrt( velocity * velocity - downVelocity*downVelocity ) * northVelocity
+//            / ( std::sqrt( eastVelocity * eastVelocity + northVelocity * northVelocity ) * velocity );
+
+//    return transformationQuaternion;
+//}
+
 //! Get transformation matrix from the local V- to TA/TG-frame.
 Eigen::Matrix3d getLocalVerticalFrameToTrajectoryTransformationMatrix(
         const double flightPathAngle, const double headingAngle )
