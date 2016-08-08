@@ -71,11 +71,19 @@ public:
      */
     SeparatedParser( std::string separator, int numberOfFields, ... );
 
+    SeparatedParser( std::string separator, int numberOfFields, va_list variableArguments );
+
     //! Set trim: Trim whitespace off fields (default=true).
     void setTrim( bool trim ) { doTrim = trim; }
 
     //! Get trim setting: Trim whitespace off fields (default=true).
     bool getTrim( ) { return doTrim; }
+
+    //! Set list of field types
+    void setFieldTypes( std::vector< FieldType > TypeList )
+    {
+        typeList = TypeList;
+    }
 
     //! Set unit transformation map.
     /*!
