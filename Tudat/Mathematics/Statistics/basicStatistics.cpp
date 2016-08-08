@@ -43,7 +43,7 @@
 #include <algorithm>
 
 #include "Tudat/Mathematics/Statistics/basicStatistics.h"
-#include "tudat/Mathematics/BasicMathematics/basicMathematicsFunctions.h"
+#include "Tudat/Mathematics/BasicMathematics/basicMathematicsFunctions.h"
 
 namespace tudat
 {
