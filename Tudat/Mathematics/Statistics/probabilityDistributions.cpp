@@ -41,7 +41,7 @@
 #include <cmath>
 #include <numeric>
 
-#include <tudat/Mathematics/Statistics/probabilityDistributions.h>
+#include <Tudat/Mathematics/Statistics/probabilityDistributions.h>
 #include <boost/math/special_functions/erf.hpp>
 #include <boost/math/distributions/normal.hpp>
 #include <boost/math/distributions/lognormal.hpp>
@@ -70,6 +70,13 @@ double GaussianDistributiond::getProbabilityDensity(const double& x){
 double GaussianDistributiond::getCumulativeProbability(const double &x){
     boost::math::normal distribution(mean_, standardDeviation_);
     return boost::math::cdf( distribution , x );
+}
+
+//! Get Quantile (Inverse CDF).
+double GaussianDistributiond::getQuantile(const double &x )
+{
+    boost::math::normal distribution(mean_, standardDeviation_);
+    return boost::math::quantile( distribution , x );
 }
 
 //! Constructor.
@@ -123,7 +130,7 @@ double LogNormalDistributiond::getCumulativeProbability(const double &x )
 }
 
 //! Get Quantile (Inverse CDF).
-double LogNormalDistributiond::getQuantile( double x )
+double LogNormalDistributiond::getQuantile(const double &x )
 {
     boost::math::lognormal distribution( locationParameter_ , scaleParameter_ );
     return boost::math::quantile( distribution , x );

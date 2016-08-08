@@ -43,7 +43,7 @@
 #include <Eigen/Sparse>
 
 #include <boost/shared_ptr.hpp>
-#include <tudat/Mathematics/BasicMathematics/mathematicalConstants.h>
+#include <Tudat/Mathematics/BasicMathematics/mathematicalConstants.h>
 
 namespace tudat
 {
@@ -92,7 +92,7 @@ public:
      * \param IndependentVariableType x sample of random variable.
      * \return quantile.
      */
-    virtual double getQuantile( IndependentVariableType x )
+    virtual double getQuantile( const IndependentVariableType& x )
     {
         return TUDAT_NAN;
     }
@@ -123,6 +123,16 @@ public:
 
     //! Get cumulative probability.
     double getCumulativeProbability( const double& x );
+
+    //! Get Quantile (Inverse CDF)
+    double getQuantile( const double& x );
+
+    //! Set the properties (mean and standard deviation) of the Gaussian distribution
+    void setProperties( const double& mean, double standardDeviation )
+    {
+        mean_ = mean;
+        standardDeviation_ = standardDeviation;
+    }
 
 protected:
 private:
@@ -206,7 +216,7 @@ public:
     double getCumulativeProbability( const double& x );
 
     //! Get Quantile (Inverse CDF)
-    double getQuantile( double x );
+    double getQuantile( const double& x );
 
     //! Get location parameter.
     double getLocationParameter()
