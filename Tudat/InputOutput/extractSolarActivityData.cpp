@@ -94,7 +94,7 @@ boost::shared_ptr<SolarActivityData> ExtractSolarActivityData::extract(
              data, centered81DaySolarRadioFlux107Observed);
      solarActivityContainer->last81DaySolarRadioFlux107Observed = getField<double>(
              data, last81DaySolarRadioFlux107Observed);
-     solarActivityContainer->dataType = getField<unsigned int>(data, dataType);
+//     solarActivityContainer->dataType = getField<unsigned int>(data, dataType);
 
 
      // Make sure only non-empty fields are extracted
