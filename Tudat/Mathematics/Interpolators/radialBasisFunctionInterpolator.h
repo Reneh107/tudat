@@ -242,18 +242,20 @@ class RadialBasisFunctionInterpolator: public Interpolator< double , double >
 {
 public:
 
-    //! Constructor
+    //! Default Constructor
     /*!
      *
      */
     RadialBasisFunctionInterpolator( std::vector< Eigen::VectorXd > independentValues,
                                      std::vector< double > dependentValues,
                                      RadialBasisFunctionType radialBasisFunctionType,
-                                     double shapeParameter ):
+                                     double shapeParameter = 1.0,
+                                     double weightDecayFactor = 0.0):
                                     independentValues_( independentValues ),
                                     dependentData_( dependentValues ),
                                     radialBasisFunctionType_( radialBasisFunctionType ),
-                                    shapeParameter_( shapeParameter )
+                                    shapeParameter_( shapeParameter ),
+                                    weightDecayFactor_( weightDecayFactor )
     {
         numberOfDimension_ = static_cast< int >( independentValues_[0].rows() );
         numberOfDatapoints_ = static_cast< int >( independentValues_.size() );
@@ -263,6 +265,26 @@ public:
         // Scale shape parameter using standard deviation of independent variables
         shapeParameterScaled_ = shapeParameter_ * ( standardDeviationOfData_.maxCoeff() );
 
+        constructRadialBasisFunction();
+
+        generateCoefficients();
+    }
+
+    //! Constructor
+    /*!
+     *
+     */
+    RadialBasisFunctionInterpolator( RadialBasisFunctionType radialBasisFunctionType,
+                                     double shapeParameter = 1.0,
+                                     double weightDecayFactor = 0.0):
+                                    radialBasisFunctionType_( radialBasisFunctionType ),
+                                    shapeParameter_( shapeParameter ),
+                                    weightDecayFactor_( weightDecayFactor )
+    { }
+
+    //! Construct the radial basis function.
+    void constructRadialBasisFunction( )
+    {
         // Construct radial basis function
         if( radialBasisFunctionType_ == RadialBasisFunctionType::Gaussian )
         {
@@ -283,8 +305,6 @@ public:
             radialBasisFunction_ = boost::make_shared< AssymetricGaussianRadialBasisFunction >(
                         shapeParameter_ , standardDeviationOfData_ );
         }
-
-        generateCoefficients();
     }
 
     //! Default destructor
@@ -336,32 +356,101 @@ public:
         return numberOfDimension_;
     }
 
-    //!
+    //! Get the scaled shape parameter.
     double getScaledShapeParameter( )
     {
         return shapeParameterScaled_;
     }
 
-    //!
+    //! Get the shape parameter of the radial basis functions.
     double getShapeParameter( )
     {
         return shapeParameter_;
     }
 
-    Eigen::VectorXd getVarianceOfData()
+    //! Get the variance of the independent variables.
+    Eigen::VectorXd getVarianceOfData( )
     {
         return varianceOfData_;
     }
 
-    Eigen::VectorXd getStandardDeviationOfData()
+    //! Get the standard deviation of the independent variables.
+    Eigen::VectorXd getStandardDeviationOfData( )
     {
         return standardDeviationOfData_;
     }
 
-private:
+    Eigen::VectorXd getCoefficients( )
+    {
+        return coefficients_;
+    }
+
+    void setCoefficients( Eigen::VectorXd coefficients )
+    {
+        coefficients_ = coefficients;
+    }
+
+    void setIndependentValues( std::vector< Eigen::VectorXd > independentValues )
+    {
+        independentValues_ = independentValues;
+        numberOfDatapoints_ = independentValues_.size();
+    }
+
+    void computeInterpolationError( )
+    {
+        std::vector< double > absoluteInterpolationError( numberOfDatapoints_ );
+        std::vector< double > relativeInterpolationError( numberOfDatapoints_ );
+        std::vector< double > interpolationError( numberOfDatapoints_ );
+        for( int i = 0 ; i < numberOfDatapoints_ ; i++ )
+        {
+            interpolationError[i] = ( interpolate( independentValues_[ i ] ) - dependentData_[ i ] );
+            absoluteInterpolationError[i] = std::abs( interpolationError[i] );
+            relativeInterpolationError[i] = absoluteInterpolationError[i] / dependentData_[ i ];
+        }
+
+        meanAbsoluteInterpolationError_ = tudat::statistics::computeSampleMean( absoluteInterpolationError );
+        meanRelativeInterpolationError_ = tudat::statistics::computeSampleMean( relativeInterpolationError );
+        meanInterpolationError_ = tudat::statistics::computeSampleMean( interpolationError );
+
+        varianceAbsoluteInterpolationError_ = tudat::statistics::computeSampleVariance( absoluteInterpolationError );
+        varianceRelativeInterpolationError_ = tudat::statistics::computeSampleVariance( relativeInterpolationError );
+        varianceInterpolationError_ = tudat::statistics::computeSampleVariance( interpolationError );
+    }
+
+    std::vector< double > getInterpolationErrorProperties( )
+    {
+        std::vector< double > interpolationErrorProperties(0);
+        interpolationErrorProperties.push_back( meanAbsoluteInterpolationError_ );
+        interpolationErrorProperties.push_back( meanRelativeInterpolationError_ );
+        interpolationErrorProperties.push_back( meanInterpolationError_ );
+        interpolationErrorProperties.push_back( varianceAbsoluteInterpolationError_ );
+        interpolationErrorProperties.push_back( varianceRelativeInterpolationError_ );
+        interpolationErrorProperties.push_back( varianceInterpolationError_ );
+        return interpolationErrorProperties;
+    }
+
+    RadialBasisFunctionPointer getRadialBasisFunction( )
+    {
+        return radialBasisFunction_;
+    }
 
     //! Generate the coefficients of the radial basis functions.
     void generateCoefficients( )
+    {
+        if( ( weightDecayFactor_ - 0.0 ) > 1.0E-16 )
+        {
+            generateCoefficientsWeightDecay( );
+        }
+        else
+        {
+            generateCoefficientsExactInterpolation( );
+        }
+    }
+
+private:
+
+    //! Generate coefficients for exact interpolation (without weight decay regularization)
+    void generateCoefficientsExactInterpolation( )
     {
         // Declare matrix A of : A c = y
         Eigen::MatrixXd matrixA( numberOfDatapoints_ , numberOfDatapoints_ );
@@ -377,7 +466,6 @@ private:
         }
 
         // Generate vector y;
-//        Eigen::VectorXd vectorY( dependentData_.data() ) ;
         Eigen::VectorXd vectorY( numberOfDatapoints_ );
         for( int i = 0 ; i < numberOfDatapoints_ ; i++ )
         {
@@ -386,6 +474,39 @@ private:
 
         // Solve coefficients
         coefficients_ = matrixA.colPivHouseholderQr( ).solve( vectorY ) ;
+    }
+
+    //! Generate coefficients for RBF interpolation with weight decay regularization.
+    void generateCoefficientsWeightDecay( )
+    {
+        // min ( norm(Ac-y)^2 + weighDecayFactor * norm(w)^2 )
+        // Declare matrix A of : A c = y
+        Eigen::MatrixXd matrixA( numberOfDatapoints_ , numberOfDatapoints_ );
+
+        // Fill matrix
+        for( int row = 0 ; row < matrixA.rows() ; row++ )
+        {
+            for( int col = 0 ; col < matrixA.cols() ; col++ )
+            {
+                matrixA( row , col ) = radialBasisFunction_->evaluate(
+                            independentValues_[ col ] , independentValues_[ row ] ) ;
+            }
+        }
+
+        // Generate vector y;
+        Eigen::VectorXd vectorY( numberOfDatapoints_ );
+        for( int i = 0 ; i < numberOfDatapoints_ ; i++ )
+        {
+            vectorY(i) = dependentData_[i];
+        }
+
+        Eigen::VectorXd ATvectorY = matrixA.transpose() * vectorY;
+
+        Eigen::MatrixXd identity = Eigen::MatrixXd::Identity( matrixA.rows() , matrixA.cols() );
+        Eigen::MatrixXd augmentenMatrixA = matrixA.transpose() * matrixA + weightDecayFactor_ * identity ;
+
+        // Solve coefficients
+        coefficients_ = augmentenMatrixA.colPivHouseholderQr( ).solve( ATvectorY ) ;
     }
 
     void calculateVariance( )
@@ -445,8 +566,19 @@ private:
     //! Scaled shape parameter of the radial basis functions.
     double shapeParameterScaled_;
 
+    //! Factor for applying weight-decay regularization (value of 0 means no weight decay)
+    double weightDecayFactor_;
+
     //! Pointer to the radial basis function
     RadialBasisFunctionPointer radialBasisFunction_;
+
+    double meanAbsoluteInterpolationError_;
+    double meanRelativeInterpolationError_;
+    double meanInterpolationError_;
+
+    double varianceAbsoluteInterpolationError_;
+    double varianceRelativeInterpolationError_;
+    double varianceInterpolationError_;
 
 };
 
